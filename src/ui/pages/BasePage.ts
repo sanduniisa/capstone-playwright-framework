@@ -17,7 +17,7 @@ this.page = page;
 * Navigate to a specific path
 * @param path - The URL path to navigate to (e.g., '/inventory.html')
 */
-async navigate(path: string): Promise<void> {
+async navigate(path: string = '/'): Promise<void> {
 await this.page.goto(path);
 }
 
