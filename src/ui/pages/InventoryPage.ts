@@ -25,6 +25,11 @@ export class InventoryPage extends BasePage {
     await expect(this.pageTitle).toHaveText(expectedTitle);
   }
 
+  async verifyInventoryPage(): Promise<void> {
+    await this.verifyTitle("Swag Labs");
+    await this.verifyPageTitle("Products");
+  }
+
   //to add a product to the cart
   async addProductToCart(productName: string): Promise<void> {
     const selectedItem = this.productCard.filter({
@@ -37,8 +42,9 @@ export class InventoryPage extends BasePage {
   }
   //to assert the number ofproducts in the cart
   async getProductCount(): Promise<number> {
+    await this.productCountIndicator.waitFor({ state: "visible" });
     const countText = await this.productCountIndicator.textContent();
-    return countText ? parseInt(countText) : 0;
+    return countText ? Number(countText) : 0;
   }
   //to assert the remove button count
   async getRemoveButtonCount(): Promise<number> {
