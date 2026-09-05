@@ -9,6 +9,7 @@ export class LoginPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
+    //locators initialization
     this.usernameInput = page.locator('[data-test="username"]');
     this.passwordInput = page.locator('[data-test="password"]');
     this.loginButton = page.locator('[data-test="login-button"]');
