@@ -2,7 +2,7 @@ import {test, expect} from "@playwright/test";
 import {LoginPage} from "../../../src/ui/pages/LoginPage";
 import {InventoryPage} from "../../../src/ui/pages/InventoryPage";
 
-test.describe('Login Page Tests', () => {
+test.describe('TC_001 Login Page Tests', () => {
     let loginPage: LoginPage;
     let inventoryPage: InventoryPage;
 
@@ -12,7 +12,7 @@ test.describe('Login Page Tests', () => {
 });
 
 
-test('verify login successfully with valid credentials', async ({ page }) => {
+test('TC_002 Verify login successfully with valid credentials', async ({ page }) => {
     // const loginPage = new LoginPage(page);
     // await loginPage.navigate(); //line 16 17 no need its already in before each
     const inventoryPage = await loginPage.login('standard_user', 'secret_sauce');
