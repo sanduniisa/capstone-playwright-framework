@@ -6,6 +6,8 @@ import {
   ContactUserResponse,
 } from "../api/ContactListAPI";
 
+// Reusable helper-driven data approach: the test data is generated dynamically here
+// so each scenario gets unique, safe values without repeating the object structure.
 const contactPassword = "QaPass!2025";
 
 /** Build unique register credentials for a given test id. */

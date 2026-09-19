@@ -1,17 +1,14 @@
-import {
-  APIRequestContext,
-  APIRequestOptions,
-  APIResponse,
-} from "@playwright/test";
+import { APIRequestContext, APIResponse } from "@playwright/test";
 
 export type RequestHeaders = Record<string, string>;
 export type QueryParams = Record<string, string | number | boolean>;
 
-interface BaseRequestOptions extends APIRequestOptions {
+type BaseRequestOptions = {
   headers?: RequestHeaders;
   params?: QueryParams;
   data?: object;
-}
+  [key: string]: unknown;
+};
 
 /**
  * BaseAPI is the common transport layer for API helpers.

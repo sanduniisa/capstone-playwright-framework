@@ -1,25 +1,15 @@
-import {test, expect} from "@playwright/test";
-import {LoginPage} from "../../../src/ui/pages/saucedemo/LoginPage";
-import {InventoryPage} from "../../../src/ui/pages/saucedemo/InventoryPage";
+import { test, expect } from "@playwright/test";
+import { LoginPage } from "../../../src/ui/pages/saucedemo/LoginPage";
+import { loginScenarios } from "../../../test-data/ui/login-data";
 
-test.describe('TC_001 Login Page Tests', () => {
-    let loginPage: LoginPage;
-    let inventoryPage: InventoryPage;
+test.describe("Login Page Tests", () => {
+  for (const scenario of loginScenarios) {
+    test(`${scenario.id} ${scenario.description}`, async ({ page }) => {
+      const loginPage = new LoginPage(page);
+      await loginPage.navigate();
 
-    test.beforeEach(async ({ page }) => {
-        loginPage = new LoginPage(page);
-        await loginPage.navigate();
-});
-
-
-test('TC_002 Verify login successfully with valid credentials', async ({ page }) => {
-    // const loginPage = new LoginPage(page);
-    // await loginPage.navigate(); //line 16 17 no need its already in before each
-    const inventoryPage = await loginPage.login('standard_user', 'secret_sauce');
-     //await inventoryPage.verifyPageTitle('Products');
-     //verify redirected URL has inventory.html
-     //Regex to match the URL pattern for inventory.html
-     await expect(page).toHaveURL(/inventory\.html/);
-});
-     
+      await loginPage.login(scenario.username, scenario.password);
+      await expect(page).toHaveURL(/inventory\.html/);
+    });
+  }
 });

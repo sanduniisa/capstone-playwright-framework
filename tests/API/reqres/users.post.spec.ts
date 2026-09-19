@@ -1,4 +1,5 @@
 import { test, expect } from "../../../fixtures/api-fixtures";
+import { reqresPostScenarios } from "../../../test-data/api/reqres-user-data";
 
 test('TC010 POST user', async ({ usersAPI }) => {
 //create object for the request body
@@ -29,45 +30,7 @@ test('TC010 POST user', async ({ usersAPI }) => {
   expect(Number.isNaN(Date.parse(body.createdAt))).toBe(false);
 });
 
-const requestBodyTestCases: Array<{
-  id: string;
-  description: string;
-  requestBody: Record<string, unknown>;
-  expectedBody: Record<string, unknown>;
-}> = [
-  {
-    id: "TC011",
-    description: "accepts a body with name missing",
-    requestBody: { job: "Senior QA Engineer" },
-    expectedBody: { job: "Senior QA Engineer" },
-  },
-  {
-    id: "TC012",
-    description: "accepts an empty name",
-    requestBody: { name: "", job: "Senior QA Engineer" },
-    expectedBody: { name: "", job: "Senior QA Engineer" },
-  },
-  {
-    id: "TC013",
-    description: "accepts a null name",
-    requestBody: { name: null, job: "Senior QA Engineer" },
-    expectedBody: { name: null, job: "Senior QA Engineer" },
-  },
-  {
-    id: "TC014",
-    description: "accepts wrong field data types",
-    requestBody: { name: 123, job: true },
-    expectedBody: { name: 123, job: true },
-  },
-  {
-    id: "TC015",
-    description: "accepts an extra field",
-    requestBody: { name: "Sanduni", job: "QA", random: "abc" },
-    expectedBody: { name: "Sanduni", job: "QA", random: "abc" },
-  },
-];
-
-for (const testCase of requestBodyTestCases) {
+for (const testCase of reqresPostScenarios) {
   test(`${testCase.id} POST user ${testCase.description}`, async ({ usersAPI }) => {
     const response = await usersAPI.createUser(testCase.requestBody as { name: string; job: string });
 
