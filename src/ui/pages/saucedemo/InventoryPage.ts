@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { BasePage } from "./BasePage";
+import { BasePage } from "../BasePage";
 import { CartPage } from "./CartPage";
 export class InventoryPage extends BasePage {
   readonly pageTitle: Locator;

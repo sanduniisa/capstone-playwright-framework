@@ -1,6 +1,6 @@
 /// <reference types="node" />
-import { defineConfig, devices } from '@playwright/test';
-import process from 'node:process';
+import { defineConfig, devices } from "@playwright/test";
+import process from "node:process";
 
 /**
  * Read environment variables from file.
@@ -14,7 +14,7 @@ import process from 'node:process';
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: './tests',
+  testDir: "./tests",
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -24,24 +24,69 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: "html",
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
     // baseURL: 'http://localhost:3000',
-    baseURL: 'https://www.saucedemo.com/',
+
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
-    headless: false,
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    trace: "on-first-retry",
+    // Browsers close automatically after each test. Use --headed (or HEADED=true) to watch the run.
+    headless: (process.env.HEADED ?? "").toLowerCase() !== "true",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
+    acceptDownloads: true,
+    //navigationTimeout: 15_000,
+
+    //  launchOptions: {
+    //   slowMo: process.env.CI ? 0 : 300,
+    // },
   },
 
   /* Configure projects for major browsers */
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: "ui-chromium",
+
+      testMatch: "tests/UI/**/*.spec.ts",
+
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL:
+          process.env.SAUCEDEMO_URL ??
+          process.env.sauceDemoUrl ??
+          "https://www.saucedemo.com/",
+      },
+    },
+    {
+      name: "reqres-api",
+      testMatch: "tests/API/reqres/**/*.spec.ts",
+      use: {
+        baseURL:
+          process.env.REQRES_API_URL ??
+          process.env.reqresApiUrl ??
+          "https://reqres.in/api/",
+
+        extraHTTPHeaders: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "x-api-key":
+            process.env.REQRES_API_KEY ??
+            "free_user_3JDDiT5EEztSZkknbviA6LSqfH3",
+        },
+        ...devices["Desktop Chrome"],
+      },
+    },
+    {
+      name: "contact-list-combined",
+      testMatch: "tests/API/herokuapp/**/*.spec.ts",
+      use: {
+        baseURL:
+          process.env.CONTACT_LIST_URL ??
+          "https://thinking-tester-contact-list.herokuapp.com",
+        ...devices["Desktop Chrome"],
+      },
     },
 
     // {

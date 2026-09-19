@@ -1,6 +1,6 @@
 //import {test, expect} from '@playwright/test';
-import { LoginPage } from "../../../src/ui/pages/LoginPage";
-import { InventoryPage } from "../../../src/ui/pages/InventoryPage";
+import { LoginPage } from "../../../src/ui/pages/saucedemo/LoginPage";
+import { InventoryPage } from "../../../src/ui/pages/saucedemo/InventoryPage";
 import { test, expect } from "../../../fixtures/ui-test-fixtures";
 
 test.describe("Inventory Page Tests", () => {
@@ -91,6 +91,8 @@ test.describe("Inventory Page Tests", () => {
     console.log(`PASS: Inventory cart badge count is ${inventoryCartCount}`);
 
     const updatedCartPage = await inventoryPageAfterContinue.openCart();
+    // Wait for the cart's item list to settle after the SPA route change before counting.
+    await expect(updatedCartPage.addedProductsCount).toHaveCount(4);
     const finalCartCount = await updatedCartPage.getCartItemCount();
     expect(finalCartCount).toBe(4);
     console.log(`PASS: Final cart item count is ${finalCartCount}`);

@@ -1,6 +1,6 @@
 import {test, expect} from "@playwright/test";
-import {LoginPage} from "../../../src/ui/pages/LoginPage";
-import {InventoryPage} from "../../../src/ui/pages/InventoryPage";
+import {LoginPage} from "../../../src/ui/pages/saucedemo/LoginPage";
+import {InventoryPage} from "../../../src/ui/pages/saucedemo/InventoryPage";
 
 test.describe('TC_001 Login Page Tests', () => {
     let loginPage: LoginPage;
