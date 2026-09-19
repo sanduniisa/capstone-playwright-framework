@@ -73,7 +73,8 @@ export default defineConfig({
           "Content-Type": "application/json",
           "x-api-key":
             process.env.REQRES_API_KEY ??
-            "free_user_3JDDiT5EEztSZkknbviA6LSqfH3",
+            "free_user_3E75Ai3rComzXI0NWpSXIL6LG7b"
+            //"free_user_3JDDiT5EEztSZkknbviA6LSqfH3",
         },
         ...devices["Desktop Chrome"],
       },
