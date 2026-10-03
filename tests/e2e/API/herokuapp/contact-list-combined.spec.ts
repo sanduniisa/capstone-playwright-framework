@@ -1,5 +1,5 @@
-import { test } from "../../../fixtures/api-fixtures";
-import { contactListScenarios } from "../../../test-data/combined/contact-list-scenarios";
+import { test } from "../../../../fixtures/api-fixtures";
+import { contactListScenarios } from "../../../../test-data/combined/contact-list-scenarios";
 
 /**
  * Same-application API + UI scenarios.
