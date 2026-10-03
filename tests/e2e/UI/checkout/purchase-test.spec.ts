@@ -1,4 +1,4 @@
-import { test, expect } from "../../../fixtures/ui-test-fixtures";
+import { test, expect } from "../../../../fixtures/ui-test-fixtures";
 
 test.describe("Purchase checkout tests", () => {
     

@@ -1,5 +1,5 @@
-import { test, expect } from "../../../fixtures/api-fixtures";
-import { reqresPostScenarios } from "../../../test-data/api/reqres-user-data";
+import { test, expect } from "../../../../fixtures/api-fixtures";
+import { reqresPostScenarios } from "../../../../test-data/api/reqres-user-data";
 
 test('TC010 POST user', async ({ usersAPI }) => {
 //create object for the request body

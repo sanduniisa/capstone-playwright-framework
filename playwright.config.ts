@@ -60,8 +60,18 @@ export default defineConfig({
       },
     },
     {
+      name: "mocking",
+      testMatch: "tests/e2e/Mocking/**/*.spec.ts",
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL:
+          process.env.MOCKING_URL ??
+          "https://demo.playwright.dev/api-mocking/",
+      },
+    },
+    {
       name: "reqres-api",
-      testMatch: "tests/API/reqres/**/*.spec.ts",
+      testMatch: "tests/e2e/API/reqres/**/*.spec.ts",
       use: {
         baseURL:
           process.env.REQRES_API_URL ??
@@ -81,7 +91,7 @@ export default defineConfig({
     },
     {
       name: "contact-list-combined",
-      testMatch: "tests/API/herokuapp/**/*.spec.ts",
+      testMatch: "tests/e2e/API/herokuapp/**/*.spec.ts",
       use: {
         baseURL:
           process.env.CONTACT_LIST_URL ??

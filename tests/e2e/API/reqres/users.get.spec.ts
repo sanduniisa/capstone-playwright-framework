@@ -1,4 +1,4 @@
-import { test, expect } from "../../../fixtures/api-fixtures";
+import { test, expect } from "../../../../fixtures/api-fixtures";
 
 function assertUserListResponse(
   responseBody: Record<string, any>,
