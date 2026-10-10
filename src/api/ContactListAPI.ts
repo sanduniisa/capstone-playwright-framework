@@ -51,14 +51,39 @@ export class ContactListAPI extends BaseAPI {
     return this.post(`${this.userPath}/login`, credentials);
   }
 
+  /** Configure this helper to authenticate requests with a saved bearer token. */
+  setAuthToken(token: string): void {
+    this.setDefaultHeaders(this.authHeaders(token));
+  }
+
   /** Read contacts using a bearer token. */
-  async getContacts(token: string) {
-    return this.get(this.contactPath, undefined, this.authHeaders(token));
+  async getContacts(token?: string) {
+    return this.get(
+      this.contactPath,
+      undefined,
+      token ? this.authHeaders(token) : undefined,
+    );
   }
 
   /** Create a contact using a bearer token. */
-  async createContact(token: string, payload: ContactPayload) {
-    return this.post(this.contactPath, payload, this.authHeaders(token));
+  async createContact(payload: ContactPayload): Promise<import("@playwright/test").APIResponse>;
+  async createContact(
+    token: string,
+    payload: ContactPayload,
+  ): Promise<import("@playwright/test").APIResponse>;
+  async createContact(
+    tokenOrPayload: string | ContactPayload,
+    payload?: ContactPayload,
+  ) {
+    const token = typeof tokenOrPayload === "string" ? tokenOrPayload : undefined;
+    const contactPayload =
+      typeof tokenOrPayload === "string" ? payload! : tokenOrPayload;
+
+    return this.post(
+      this.contactPath,
+      contactPayload,
+      token ? this.authHeaders(token) : undefined,
+    );
   }
 
   private authHeaders(token: string): RequestHeaders {

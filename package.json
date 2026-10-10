@@ -3,13 +3,21 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test:cucumber": "playwright test --project=admin-setup --project=user-setup --project=contact-list-api-auth-setup && cucumber-js --config cucumber.cjs",
+    "test:e2e:auth-patterns": "playwright test tests/e2e/UI/auth/login-session-storage.spec.ts tests/e2e/UI/auth/admin-auth-skip.spec.ts --project=login-tests --project=admin-tests",
+    "test:e2e:parallel-auth": "playwright test --project=multi-role-tests --workers=2",
+    "test:cucumber:parallel-auth": "playwright test --project=admin-setup --project=user-setup && cucumber-js --config cucumber.cjs --tags @parallel-auth --parallel 2",
+    "test:e2e:bank": "playwright test --project=bank-admin-setup --project=bank-admin-tests"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@cucumber/cucumber": "^13.3.0",
     "@playwright/test": "^1.62.1",
-    "@types/node": "^26.1.2"
+    "@types/node": "^26.1.2",
+    "tsx": "^4.23.15"
   }
 }

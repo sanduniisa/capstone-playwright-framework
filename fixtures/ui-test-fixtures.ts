@@ -1,5 +1,12 @@
 import { test as base, expect } from "@playwright/test";
-import { LoginPage, InventoryPage } from "../src/ui/pages";
+import type { InventoryPage } from "../src/ui/pages/saucedemo/InventoryPage";
+import type { LoginPage } from "../src/ui/pages/saucedemo/LoginPage";
+import {
+  CREDENTIALS,
+  createInventoryPageFixture,
+  createInventoryPageWithProductsFixture,
+  createLoginPageFixture,
+} from "../src/ui/uiFixtureSetup";
 
 //fixture types
 
@@ -14,27 +21,6 @@ type UIAutomationFixtures = {
   inventoryPageWithProductsFixture: InventoryPage;
 };
 
-//user login test credentials
-
-const CREDENTIALS = {
-  standard: {
-    username: "standard_user",
-    password: "secret_sauce",
-  },
-  locked: {
-    username: "locked_out_user",
-    password: "secret_sauce",
-  },
-  problem: {
-    username: "problem_user",
-    password: "secret_sauce",
-  },
-  performance: {
-    username: "performance_glitch_user",
-    password: "secret_sauce",
-  },
-};
-
 //custom test with fixtures
 
 export const test = base.extend<UIAutomationFixtures>({
@@ -44,9 +30,7 @@ export const test = base.extend<UIAutomationFixtures>({
    * No automatic login - use for testing login functionality
    */
   loginPageFixture: async ({ page }, use) => {
-    const loginPage = new LoginPage(page);
-    await loginPage.navigate();
-    await use(loginPage);
+    await use(await createLoginPageFixture(page));
   },
 
   // ==========================================
@@ -58,19 +42,7 @@ export const test = base.extend<UIAutomationFixtures>({
    * User is logged in as 'standard_user' before the test runs
    */
   inventoryPageFixture: async ({ page }, use) => {
-    //setup : create page objects
-    const loginPage = new LoginPage(page);
-    const inventoryPage = new InventoryPage(page);
-    //setup : Login
-    await loginPage.navigate();
-    await loginPage.login(
-      CREDENTIALS.standard.username,
-      CREDENTIALS.standard.password,
-    );
-    //wait for inventory page to load
-    await page.waitForURL(/inventory\.html/);
-    //provide fixture to test
-    await use(inventoryPage);
+    await use(await createInventoryPageFixture(page));
   },
   //Inventory page with multiple products added to the cart fixture
   /**
@@ -78,23 +50,7 @@ export const test = base.extend<UIAutomationFixtures>({
    * User is logged in as 'standard_user' and several products are added to the cart before the test runs
    */
   inventoryPageWithProductsFixture: async ({ page }, use) => {
-    //setup : create page objects
-    const loginPage = new LoginPage(page);
-    const inventoryPage = new InventoryPage(page);
-    //setup : Login
-    await loginPage.navigate();
-    await loginPage.login(
-      CREDENTIALS.standard.username,
-      CREDENTIALS.standard.password,
-    );
-    //wait for inventory page to load
-    await page.waitForURL(/inventory\.html/);
-    //setup : add multiple products to the cart
-    await inventoryPage.addProductToCart("Sauce Labs Backpack");
-    await inventoryPage.addProductToCart("Sauce Labs Bike Light");
-    await inventoryPage.addProductToCart("Sauce Labs Bolt T-Shirt");
-    //provide fixture to test
-    await use(inventoryPage);
+    await use(await createInventoryPageWithProductsFixture(page));
   },
 });
 export { expect };
