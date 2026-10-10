@@ -47,9 +47,90 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
+      name: "admin-setup",
+      testMatch: "tests/e2e/UI/auth/admin-setup.ts",
+    },
+    {
+      name: "user-setup",
+      testMatch: "tests/e2e/UI/auth/user-setup.ts",
+    },
+    {
+      name: "bank-admin-setup",
+      testMatch: "tests/e2e/UI/auth/bank-admin-setup.ts",
+      use: {
+        baseURL:
+          process.env.PARABANK_URL ??
+          process.env.parabankUrl ??
+          "https://parabank.parasoft.com/parabank/",
+      },
+    },
+    {
+      name: "admin-tests",
+      testMatch: "**/*admin*.spec.ts",
+      testIgnore: "**/*bank-admin*.spec.ts",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "playwright/.auth/admin.json",
+        baseURL:
+          process.env.SAUCEDEMO_URL ??
+          process.env.sauceDemoUrl ??
+          "https://www.saucedemo.com/",
+      },
+      dependencies: ["admin-setup"],
+    },
+    {
+      name: "user-tests",
+      testMatch: "**/*user*.spec.ts",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "playwright/.auth/user.json",
+        baseURL:
+          process.env.SAUCEDEMO_URL ??
+          process.env.sauceDemoUrl ??
+          "https://www.saucedemo.com/",
+      },
+      dependencies: ["user-setup"],
+    },
+    {
+      name: "login-tests",
+      testMatch: "**/*login*.spec.ts",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: { cookies: [], origins: [] },
+        baseURL:
+          process.env.SAUCEDEMO_URL ??
+          process.env.sauceDemoUrl ??
+          "https://www.saucedemo.com/",
+      },
+    },
+    {
+      name: "multi-role-tests",
+      testMatch: "**/*multi-role*.spec.ts",
+      use: {
+        ...devices["Desktop Chrome"],
+      },
+      dependencies: ["admin-setup", "user-setup"],
+    },
+    {
+      name: "bank-admin-tests",
+      testMatch: "**/*bank-admin*.spec.ts",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "playwright/.auth/bank-admin.json",
+        baseURL:
+          process.env.PARABANK_URL ??
+          process.env.parabankUrl ??
+          "https://parabank.parasoft.com/parabank/",
+      },
+      dependencies: ["bank-admin-setup"],
+    },
+    {
       name: "ui-chromium",
 
-      testMatch: "tests/UI/**/*.spec.ts",
+      testMatch: [
+        "e2e/UI/products/**/*.spec.ts",
+        "e2e/UI/checkout/**/*.spec.ts",
+      ],
 
       use: {
         ...devices["Desktop Chrome"],
@@ -90,8 +171,28 @@ export default defineConfig({
       },
     },
     {
+      name: "contact-list-api-auth-setup",
+      testMatch: "**/contact-list-api-auth.setup.ts",
+      use: {
+        baseURL:
+          process.env.CONTACT_LIST_URL ??
+          "https://thinking-tester-contact-list.herokuapp.com",
+      },
+    },
+    {
+      name: "contact-list-api-auth-tests",
+      testMatch: "**/*.api-auth.spec.ts",
+      use: {
+        baseURL:
+          process.env.CONTACT_LIST_URL ??
+          "https://thinking-tester-contact-list.herokuapp.com",
+      },
+      dependencies: ["contact-list-api-auth-setup"],
+    },
+    {
       name: "contact-list-combined",
       testMatch: "tests/e2e/API/herokuapp/**/*.spec.ts",
+      testIgnore: "**/*.api-auth.spec.ts",
       use: {
         baseURL:
           process.env.CONTACT_LIST_URL ??

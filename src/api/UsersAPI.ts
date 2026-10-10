@@ -52,7 +52,7 @@ export class UsersAPI extends BaseAPI {
   private readonly basePath = "/api/users";
 
   /** GET /api/users?page={page}; Playwright serializes the ? query parameter. */
-  async getUsers(page = 1, headers?: RequestHeaders) {
+  async getUsers(page: number | string = 1, headers?: RequestHeaders) {
     return this.get(this.basePath, { page }, headers);
   }
 

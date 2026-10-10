@@ -6,6 +6,7 @@ export class InventoryPage extends BasePage {
   readonly productCard: Locator;
   readonly productCountIndicator: Locator;
   readonly productLabel: Locator;
+  readonly productSort: Locator;
   readonly shoppingCartIcon: Locator;
   readonly removeButton: Locator;
 
@@ -14,6 +15,7 @@ export class InventoryPage extends BasePage {
     this.pageTitle = page.locator(".title");
     this.productCard = page.locator(".inventory_item");
     this.productLabel = page.locator(".inventory_item_label");
+    this.productSort = page.locator('[data-test="product-sort-container"]');
     this.shoppingCartIcon = page.locator('[data-test="shopping-cart-link"]');
     this.productCountIndicator = page.locator(".shopping_cart_badge");
     this.removeButton = page.getByRole("button", { name: "Remove" });
@@ -49,6 +51,22 @@ export class InventoryPage extends BasePage {
   //to assert the remove button count
   async getRemoveButtonCount(): Promise<number> {
     return await this.removeButton.count();
+  }
+
+  async getVisibleProductCount(): Promise<number> {
+    return await this.productCard.count();
+  }
+
+  async getVisibleProductNames(): Promise<string[]> {
+    return await this.page.locator('[data-test="inventory-item-name"]').allTextContents();
+  }
+
+  async getFirstVisibleProductName(): Promise<string> {
+    return (await this.page.locator('[data-test="inventory-item-name"]').first().textContent()) ?? "";
+  }
+
+  async sortProducts(optionValue: string): Promise<void> {
+    await this.productSort.selectOption(optionValue);
   }
 
   //to open the shopping cart

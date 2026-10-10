@@ -1,7 +1,7 @@
 //import {test, expect} from '@playwright/test';
-import { LoginPage } from "../../../src/ui/pages/saucedemo/LoginPage";
-import { InventoryPage } from "../../../src/ui/pages/saucedemo/InventoryPage";
-import { test, expect } from "../../../fixtures/ui-test-fixtures";
+import { LoginPage } from "../../../../src/ui/pages/saucedemo/LoginPage";
+import { InventoryPage } from "../../../../src/ui/pages/saucedemo/InventoryPage";
+import { test, expect } from "../../../../fixtures/ui-test-fixtures";
 
 test.describe("Inventory Page Tests", () => {
   test("TC_003 Add a product to the cart", async ({ page }) => {
