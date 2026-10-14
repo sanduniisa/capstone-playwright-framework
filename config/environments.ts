@@ -19,7 +19,11 @@ const DEFAULT_URLS: EnvironmentUrls = {
 };
 
 function resolveUrl(primaryKey: string, sharedKey: string, fallback: string): string {
-  return process.env[primaryKey] ?? process.env[sharedKey] ?? fallback;
+  return (
+    process.env[primaryKey]?.trim() ||
+    process.env[sharedKey]?.trim() ||
+    fallback
+  );
 }
 
 const ENVIRONMENT_URLS: Record<TestEnvironment, EnvironmentUrls> = {
