@@ -91,6 +91,11 @@ on:
         required: false
         default: false
         type: boolean
+      report_email:
+        description: Email address for this run's report. Leave blank to use the configured REPORT_EMAIL_TO variable.
+        required: false
+        default: ''
+        type: string
   schedule:
     - cron: '0 2 * * *'
 
@@ -110,6 +115,7 @@ jobs:
     env:
       CI: 'true'
       TEST_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'qa' }}
+      REPORT_EMAIL_TO: ${{ inputs.report_email || vars.REPORT_EMAIL_TO }}
       SAUCEDEMO_URL: ${{ vars.SAUCEDEMO_URL }}
       PARABANK_URL: ${{ vars.PARABANK_URL }}
       CONTACT_LIST_URL: ${{ vars.CONTACT_LIST_URL }}
@@ -248,3 +254,45 @@ jobs:
           path: test-results/
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Check email notification configuration
+        id: email-config
+        if: ${{ always() && !cancelled() }}
+        shell: bash
+        env:
+          SMTP_HOST: ${{ vars.SMTP_HOST }}
+          SMTP_PORT: ${{ vars.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          REPORT_EMAIL_TO: ${{ env.REPORT_EMAIL_TO }}
+        run: |
+          if [[ -n "$SMTP_HOST" && -n "$SMTP_PORT" && -n "$SMTP_USERNAME" && -n "$SMTP_PASSWORD" && -n "$REPORT_EMAIL_TO" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Email notification skipped: configure SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, and REPORT_EMAIL_TO."
+          fi
+
+      - name: Email workflow result
+        if: ${{ always() && !cancelled() && steps.email-config.outputs.enabled == 'true' }}
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ vars.SMTP_HOST }}
+          server_port: ${{ vars.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          to: ${{ env.REPORT_EMAIL_TO }}
+          from: ${{ vars.REPORT_EMAIL_FROM || secrets.SMTP_USERNAME }}
+          subject: "[${{ job.status }}] ${{ github.repository }} - ${{ github.event_name == 'workflow_dispatch' && inputs.suite || 'playwright' }} - ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'qa' }}"
+          body: |
+            The GitHub Actions test workflow has completed.
+
+            Status: ${{ job.status }}
+            Suite: ${{ github.event_name == 'workflow_dispatch' && inputs.suite || 'playwright' }}
+            Environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'qa' }}
+            Playwright grep: ${{ github.event_name == 'workflow_dispatch' && inputs.grep || 'all' }}
+            Cucumber tags: ${{ github.event_name == 'workflow_dispatch' && inputs.cucumber_tags || 'all' }}
+            Project: ${{ github.event_name == 'workflow_dispatch' && inputs.project || 'all' }}
+
+            View the run and download the Playwright report and test results:
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
