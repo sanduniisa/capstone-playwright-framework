@@ -22,6 +22,10 @@ on:
           - '@ui'
           - '@mocking'
           - '@reqres'
+          - '@api|@ui'
+          - '@api|@mocking'
+          - '@ui|@mocking'
+          - '@api|@ui|@mocking'
           - TC_AUTH_
           - TC_SESSION_
           - TC_BANK_
@@ -45,6 +49,12 @@ on:
           - '@reqres'
           - '@saucedemo'
           - '@ui'
+          - '@api or @ui'
+          - '@api or @mocking'
+          - '@ui or @mocking'
+          - '@api or @ui or @mocking'
+          - '@reqres or @contact-list-api'
+          - '@saucedemo or @contact-list-ui'
       project:
         description: Playwright project to run. Ignored for Cucumber.
         required: false
