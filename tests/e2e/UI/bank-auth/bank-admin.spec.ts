@@ -1,7 +1,7 @@
 import { BankDashboardPage } from "../../../../src/ui/pages/bank-auth/BankDashboardPage";
 import { test } from "../../../../fixtures/bank-auth-fixtures";
 
-test.describe("Parabank admin authenticated flows", () => {
+test.describe("@ui @parabank Parabank admin authenticated flows", () => {
   test("TC_BANK_001 saved bank admin auth opens the dashboard", async ({
     bankDashboardPage,
   }) => {

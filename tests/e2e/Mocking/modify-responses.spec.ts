@@ -10,7 +10,7 @@ const FRUITS_API_PATTERN = '*/**/api/v1/fruits';
 //Used in modify-responses.spec.ts.
 // ---------------------------------------------------------------------------
 
-test.describe('Modify Real API Responses', () => {
+test.describe('@mocking Modify Real API Responses', () => {
   test('add a custom fruit to the real response', async ({ page }) => {
     await page.route(FRUITS_API_PATTERN, async (route) => {
       // 1. Fetch the REAL response
@@ -99,7 +99,7 @@ test.describe('Modify Real API Responses', () => {
 // Test Suite: Modify Outgoing Requests (route.continue)
 // ---------------------------------------------------------------------------
 
-test.describe('Modify Outgoing Requests', () => {
+test.describe('@mocking Modify Outgoing Requests', () => {
   test('add a custom header to outgoing API requests', async ({ page }) => {
     let sentHeaders: Record<string, string> | undefined;
 

@@ -32,7 +32,7 @@ const patchTestCases: Array<{
 ];
 
 for (const testCase of patchTestCases) {
-	test(`${testCase.id} PATCH user ${testCase.description}`, async ({ usersAPI }) => {
+	test(`@api @reqres ${testCase.id} PATCH user ${testCase.description}`, async ({ usersAPI }) => {
 		const response = await usersAPI.patchUser(
 			testCase.userId,
 			testCase.requestBody as Partial<UserPayload>,

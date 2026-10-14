@@ -1,6 +1,6 @@
 import { test, expect } from "../../../../fixtures/ui-test-fixtures";
 
-test.describe("Purchase checkout tests", () => {
+test.describe("@ui @saucedemo Purchase checkout tests", () => {
     
   test("TC_007 complete checkout with customer information", async ({
     inventoryPageWithProductsFixture,

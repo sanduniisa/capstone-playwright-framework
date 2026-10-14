@@ -12,13 +12,39 @@ on:
           - playwright
           - cucumber
       grep:
-        description: Playwright grep pattern. Leave empty to run all Playwright tests.
+        description: Playwright grep pattern.
         required: false
-        default: ''
+        default: all
+        type: choice
+        options:
+          - all
+          - '@api'
+          - '@ui'
+          - '@mocking'
+          - '@reqres'
+          - TC_AUTH_
+          - TC_SESSION_
+          - TC_BANK_
+          - Contact List
+          - HAR Recording & Replay
       cucumber_tags:
-        description: Cucumber tag expression, for example @mocking or @reqres and not @wip.
+        description: Cucumber tag expression.
         required: false
-        default: ''
+        default: all
+        type: choice
+        options:
+          - all
+          - '@api'
+          - '@contact-list-api'
+          - '@contact-list-ui'
+          - '@cucumber'
+          - '@integration'
+          - '@mocking'
+          - '@parallel-auth'
+          - '@playwright'
+          - '@reqres'
+          - '@saucedemo'
+          - '@ui'
       project:
         description: Playwright project to run. Ignored for Cucumber.
         required: false
@@ -99,11 +125,19 @@ jobs:
         shell: bash
         env:
           INPUT_SUITE: ${{ github.event_name == 'workflow_dispatch' && inputs.suite || 'playwright' }}
-          INPUT_GREP: ${{ github.event_name == 'workflow_dispatch' && inputs.grep || '' }}
-          INPUT_CUCUMBER_TAGS: ${{ github.event_name == 'workflow_dispatch' && inputs.cucumber_tags || '' }}
+          INPUT_GREP: ${{ github.event_name == 'workflow_dispatch' && inputs.grep || 'all' }}
+          INPUT_CUCUMBER_TAGS: ${{ github.event_name == 'workflow_dispatch' && inputs.cucumber_tags || 'all' }}
           INPUT_PROJECT: ${{ github.event_name == 'workflow_dispatch' && inputs.project || 'all' }}
           INPUT_HEADED: ${{ github.event_name == 'workflow_dispatch' && inputs.headed || 'false' }}
         run: |
+          if [ "$INPUT_GREP" = "all" ]; then
+            INPUT_GREP=""
+          fi
+
+          if [ "$INPUT_CUCUMBER_TAGS" = "all" ]; then
+            INPUT_CUCUMBER_TAGS=""
+          fi
+
           echo "suite=${INPUT_SUITE}" >> "$GITHUB_OUTPUT"
           echo "grep=${INPUT_GREP}" >> "$GITHUB_OUTPUT"
           echo "cucumber_tags=${INPUT_CUCUMBER_TAGS}" >> "$GITHUB_OUTPUT"

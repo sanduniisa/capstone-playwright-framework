@@ -1,7 +1,7 @@
 import { expect, test } from "../../../../fixtures/ui-role-auth-fixtures";
 import { InventoryPage } from "../../../../src/ui/pages/saucedemo/InventoryPage";
 
-test.describe("Admin and performance glitch user run in parallel", () => {
+test.describe("@ui @saucedemo @parallel-auth Admin and performance glitch user run in parallel", () => {
   test.describe.configure({ mode: "parallel" });
 
   test("TC_AUTH_PARALLEL_001 admin session loads the inventory", async ({

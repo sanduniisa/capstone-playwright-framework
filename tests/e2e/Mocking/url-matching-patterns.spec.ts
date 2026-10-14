@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 const FRUITS_GLOB_PATTERN = '*/**/api/v1/fruits';
 const FRUITS_REGEX_PATTERN = /\/api\/v1\/fruits$/;
 
-test.describe('URL Matching Patterns', () => {
+test.describe('@mocking URL Matching Patterns', () => {
   test('glob pattern matches the fruits endpoint', async ({ page }) => {
     await page.route(FRUITS_GLOB_PATTERN, async (route) => {
       await route.fulfill({ json: [{ name: 'Glob Fruit', id: 1 }] });

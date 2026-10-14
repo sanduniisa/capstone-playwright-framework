@@ -7,7 +7,7 @@ import {
   setSessionStorageValue,
 } from "../../../../src/utils/sessionStorage";
 
-test.describe("Session storage auth patterns", () => {
+test.describe("@ui @saucedemo @session-storage Session storage auth patterns", () => {
   test.beforeEach(async ({ page }) => {
     const loginPage = new LoginPage(page);
     await loginPage.navigateToLogin();

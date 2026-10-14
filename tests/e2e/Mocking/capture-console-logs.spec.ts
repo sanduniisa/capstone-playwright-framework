@@ -1,6 +1,6 @@
 import { test, expect } from '../../../fixtures/mock-fixtures';
 
-test.describe('Network Events', () => {
+test.describe('@mocking Network Events', () => {
   test('capture browser logs using shared browserLogs fixture', async ({
     page,
     browserLogs,

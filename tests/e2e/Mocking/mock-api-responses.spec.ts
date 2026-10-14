@@ -10,7 +10,7 @@ const FRUITS_API_PATTERN = '*/**/api/v1/fruits';
 //Covers custom JSON, JSON files, HTTP 500, empty results, delayed responses, and custom headers.//
 // ---------------------------------------------------------------------------
 
-test.describe('Mock API Responses', () => {
+test.describe('@mocking Mock API Responses', () => {
   test('mock fruits API with custom inline data', async ({ page }) => {
     // Define mock data
     //in typescript we can create json object with type safety and pass o constant variable to the route.fulfill method 

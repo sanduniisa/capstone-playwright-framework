@@ -21,7 +21,7 @@ const getTestCaseId = () =>
 // Test Suite: Network Events & Monitoring
 // ---------------------------------------------------------------------------
 
-test.describe('Network Events', () => {
+test.describe('@mocking Network Events', () => {
   test.beforeEach(async ({ page }, testInfo) => {
     const testCaseId = testInfo.title.match(/NET-\d{3}/)?.[0] ?? 'NET-UNKNOWN';
     const browserLogs: BrowserLogEntry[] = [];

@@ -1,7 +1,7 @@
 import { test, expect } from "../../../../fixtures/api-fixtures";
 import { reqresPostScenarios } from "../../../../test-data/api/reqres-user-data";
 
-test('TC010 POST user', async ({ usersAPI }) => {
+test('@api @reqres TC010 POST user', async ({ usersAPI }) => {
 //create object for the request body
   const requestBody = {
     name: 'Sanduni',
@@ -31,7 +31,7 @@ test('TC010 POST user', async ({ usersAPI }) => {
 });
 
 for (const testCase of reqresPostScenarios) {
-  test(`${testCase.id} POST user ${testCase.description}`, async ({ usersAPI }) => {
+  test(`@api @reqres ${testCase.id} POST user ${testCase.description}`, async ({ usersAPI }) => {
     const response = await usersAPI.createUser(testCase.requestBody as { name: string; job: string });
 
     expect(response.status()).toBe(201);
