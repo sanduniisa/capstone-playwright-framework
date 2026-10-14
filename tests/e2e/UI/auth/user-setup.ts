@@ -9,12 +9,14 @@
 * with `dependencies: ['user-setup']`.
 */
 import { test as setup, expect } from '@playwright/test';
+import { getEnvironmentUrls } from '../../../../config/environments';
 
 const userAuthFile = 'playwright/.auth/user.json';
+const environmentUrls = getEnvironmentUrls();
 
 setup('authenticate as standard user', async ({ page }) => {
 // Step 1: Navigate to login page
-await page.goto('https://www.saucedemo.com/');
+await page.goto(environmentUrls.sauceDemoUrl);
 
 // Step 2: Fill in standard user credentials
 // Using 'performance_glitch_user' to demonstrate a different user role

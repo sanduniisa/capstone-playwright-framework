@@ -3,7 +3,7 @@ import {
   type BrowserContext,
   type Page,
 } from "@playwright/test";
-import process from "node:process";
+import { getEnvironmentUrls } from "../config/environments";
 
 interface AuthFixtures {
   /**
@@ -17,10 +17,8 @@ interface AuthFixtures {
   userContext: BrowserContext;
 }
 
-const baseURL =
-  process.env.SAUCEDEMO_URL ??
-  process.env.sauceDemoUrl ??
-  "https://www.saucedemo.com/";
+const environmentUrls = getEnvironmentUrls();
+const baseURL = environmentUrls.sauceDemoUrl;
 
 export const test = base.extend<AuthFixtures>({
   adminContext: async ({ browser }, use) => {

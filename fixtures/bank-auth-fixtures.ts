@@ -1,4 +1,5 @@
 import { test as base, type BrowserContext } from "@playwright/test";
+import { getEnvironmentUrls } from "../config/environments";
 import { BankDashboardPage } from "../src/ui/pages/bank-auth/BankDashboardPage";
 import { BankLoginPage } from "../src/ui/pages/bank-auth/BankLoginPage";
 
@@ -8,10 +9,8 @@ type BankAuthFixtures = {
   bankDashboardPage: BankDashboardPage;
 };
 
-const parabankBaseURL =
-  process.env.PARABANK_URL ??
-  process.env.parabankUrl ??
-  "https://parabank.parasoft.com/parabank/";
+const environmentUrls = getEnvironmentUrls();
+const parabankBaseURL = environmentUrls.parabankUrl;
 
 export const test = base.extend<BankAuthFixtures>({
   bankContext: async ({ browser }, use) => {
