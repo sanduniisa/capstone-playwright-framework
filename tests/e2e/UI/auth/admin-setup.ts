@@ -9,13 +9,15 @@
 * with `dependencies: ['admin-setup']`.
 */
 import { test as setup, expect } from '@playwright/test';
+import { getEnvironmentUrls } from '../../../../config/environments';
 
 const adminAuthFile = 'playwright/.auth/admin.json';
+const environmentUrls = getEnvironmentUrls();
 
 
 setup('authenticate as admin user', async ({ page }) => {
 // Step 1: Navigate to login page
-await page.goto('https://www.saucedemo.com/');
+await page.goto(environmentUrls.sauceDemoUrl);
 
 // Step 2: Fill in admin credentials
 // Using 'standard_user' to simulate admin (saucedemo has limited roles)

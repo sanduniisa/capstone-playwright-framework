@@ -10,6 +10,7 @@ import {
 } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import process from "node:process";
+import { getEnvironmentUrls } from "../../../config/environments";
 import { ContactListAPI, type ContactPayload, type ContactUserCredentials, type ContactUserResponse } from "../../../src/api/ContactListAPI";
 import { UsersAPI } from "../../../src/api/UsersAPI";
 import { createMockHelper, type MockHelper } from "../../../src/utils/mockHelper";
@@ -27,6 +28,8 @@ import {
 } from "../../../src/ui/uiFixtureSetup";
 
 /** Holds per-scenario Playwright resources, API clients, page objects, and captured test state. */
+const environmentUrls = getEnvironmentUrls();
+
 export class PlaywrightWorld extends World {
   browser?: Browser;
   context?: BrowserContext;
@@ -62,16 +65,11 @@ export class PlaywrightWorld extends World {
   recordedHarEntryCount = 0;
 
   readonly baseURL =
-    process.env.SAUCEDEMO_URL ??
-    process.env.sauceDemoUrl ??
-    "https://www.saucedemo.com/";
+    environmentUrls.sauceDemoUrl;
   readonly contactListBaseURL =
-    process.env.CONTACT_LIST_URL ??
-    "https://thinking-tester-contact-list.herokuapp.com";
+    environmentUrls.contactListUrl;
   readonly reqresBaseURL =
-    process.env.REQRES_API_URL ??
-    process.env.reqresApiUrl ??
-    "https://reqres.in/api/";
+    environmentUrls.reqresApiUrl;
 
   async startBrowser(baseURL = this.baseURL): Promise<void> {
     this.browser = await chromium.launch({
@@ -111,9 +109,7 @@ export class PlaywrightWorld extends World {
   }
 
   async startMockingBrowser(): Promise<void> {
-    const mockingBaseURL =
-      process.env.MOCKING_URL ??
-      "https://demo.playwright.dev/api-mocking/";
+    const mockingBaseURL = environmentUrls.mockingUrl;
     await this.startBrowser(mockingBaseURL);
     this.mockHelper = createMockHelper(this.page!);
     this.page!.on("console", (message) => {

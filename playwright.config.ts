@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import { defineConfig, devices } from "@playwright/test";
+import { getEnvironmentUrls } from "./config/environments";
 import process from "node:process";
 
 /**
@@ -13,6 +14,8 @@ import process from "node:process";
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
+const environmentUrls = getEnvironmentUrls();
+
 export default defineConfig({
   testDir: "./tests",
   /* Run tests in files in parallel */
@@ -49,19 +52,22 @@ export default defineConfig({
     {
       name: "admin-setup",
       testMatch: "tests/e2e/UI/auth/admin-setup.ts",
+      use: {
+        baseURL: environmentUrls.sauceDemoUrl,
+      },
     },
     {
       name: "user-setup",
       testMatch: "tests/e2e/UI/auth/user-setup.ts",
+      use: {
+        baseURL: environmentUrls.sauceDemoUrl,
+      },
     },
     {
       name: "bank-admin-setup",
       testMatch: "tests/e2e/UI/auth/bank-admin-setup.ts",
       use: {
-        baseURL:
-          process.env.PARABANK_URL ??
-          process.env.parabankUrl ??
-          "https://parabank.parasoft.com/parabank/",
+        baseURL: environmentUrls.parabankUrl,
       },
     },
     {
@@ -71,10 +77,7 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         storageState: "playwright/.auth/admin.json",
-        baseURL:
-          process.env.SAUCEDEMO_URL ??
-          process.env.sauceDemoUrl ??
-          "https://www.saucedemo.com/",
+        baseURL: environmentUrls.sauceDemoUrl,
       },
       dependencies: ["admin-setup"],
     },
@@ -84,10 +87,7 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         storageState: "playwright/.auth/user.json",
-        baseURL:
-          process.env.SAUCEDEMO_URL ??
-          process.env.sauceDemoUrl ??
-          "https://www.saucedemo.com/",
+        baseURL: environmentUrls.sauceDemoUrl,
       },
       dependencies: ["user-setup"],
     },
@@ -97,10 +97,7 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         storageState: { cookies: [], origins: [] },
-        baseURL:
-          process.env.SAUCEDEMO_URL ??
-          process.env.sauceDemoUrl ??
-          "https://www.saucedemo.com/",
+        baseURL: environmentUrls.sauceDemoUrl,
       },
     },
     {
@@ -117,10 +114,7 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         storageState: "playwright/.auth/bank-admin.json",
-        baseURL:
-          process.env.PARABANK_URL ??
-          process.env.parabankUrl ??
-          "https://parabank.parasoft.com/parabank/",
+        baseURL: environmentUrls.parabankUrl,
       },
       dependencies: ["bank-admin-setup"],
     },
@@ -134,10 +128,7 @@ export default defineConfig({
 
       use: {
         ...devices["Desktop Chrome"],
-        baseURL:
-          process.env.SAUCEDEMO_URL ??
-          process.env.sauceDemoUrl ??
-          "https://www.saucedemo.com/",
+        baseURL: environmentUrls.sauceDemoUrl,
       },
     },
     {
@@ -145,19 +136,14 @@ export default defineConfig({
       testMatch: "tests/e2e/Mocking/**/*.spec.ts",
       use: {
         ...devices["Desktop Chrome"],
-        baseURL:
-          process.env.MOCKING_URL ??
-          "https://demo.playwright.dev/api-mocking/",
+        baseURL: environmentUrls.mockingUrl,
       },
     },
     {
       name: "reqres-api",
       testMatch: "tests/e2e/API/reqres/**/*.spec.ts",
       use: {
-        baseURL:
-          process.env.REQRES_API_URL ??
-          process.env.reqresApiUrl ??
-          "https://reqres.in/api/",
+        baseURL: environmentUrls.reqresApiUrl,
 
         extraHTTPHeaders: {
           Accept: "application/json",
@@ -174,18 +160,14 @@ export default defineConfig({
       name: "contact-list-api-auth-setup",
       testMatch: "**/contact-list-api-auth.setup.ts",
       use: {
-        baseURL:
-          process.env.CONTACT_LIST_URL ??
-          "https://thinking-tester-contact-list.herokuapp.com",
+        baseURL: environmentUrls.contactListUrl,
       },
     },
     {
       name: "contact-list-api-auth-tests",
       testMatch: "**/*.api-auth.spec.ts",
       use: {
-        baseURL:
-          process.env.CONTACT_LIST_URL ??
-          "https://thinking-tester-contact-list.herokuapp.com",
+        baseURL: environmentUrls.contactListUrl,
       },
       dependencies: ["contact-list-api-auth-setup"],
     },
@@ -194,9 +176,7 @@ export default defineConfig({
       testMatch: "tests/e2e/API/herokuapp/**/*.spec.ts",
       testIgnore: "**/*.api-auth.spec.ts",
       use: {
-        baseURL:
-          process.env.CONTACT_LIST_URL ??
-          "https://thinking-tester-contact-list.herokuapp.com",
+        baseURL: environmentUrls.contactListUrl,
         ...devices["Desktop Chrome"],
       },
     },

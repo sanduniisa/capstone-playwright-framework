@@ -1,0 +1,186 @@
+name: Playwright And Cucumber Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Test suite to run.
+        required: false
+        default: playwright
+        type: choice
+        options:
+          - playwright
+          - cucumber
+      grep:
+        description: Playwright grep pattern. Leave empty to run all Playwright tests.
+        required: false
+        default: ''
+      cucumber_tags:
+        description: Cucumber tag expression, for example @mocking or @reqres and not @wip.
+        required: false
+        default: ''
+      project:
+        description: Playwright project to run. Ignored for Cucumber.
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - admin-tests
+          - user-tests
+          - login-tests
+          - multi-role-tests
+          - bank-admin-tests
+          - ui-chromium
+          - mocking
+          - reqres-api
+          - contact-list-combined
+          - contact-list-api-auth-tests
+      environment:
+        description: Target environment URL set.
+        required: false
+        default: qa
+        type: choice
+        options:
+          - qa
+          - stg
+          - prod
+      headed:
+        description: Run browsers in headed mode where applicable.
+        required: false
+        default: false
+        type: boolean
+  schedule:
+    - cron: '0 2 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: playwright-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'qa' }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Run selected test suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'qa' }}
+    env:
+      CI: 'true'
+      TEST_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'qa' }}
+      SAUCEDEMO_URL: ${{ vars.SAUCEDEMO_URL }}
+      PARABANK_URL: ${{ vars.PARABANK_URL }}
+      CONTACT_LIST_URL: ${{ vars.CONTACT_LIST_URL }}
+      REQRES_API_URL: ${{ vars.REQRES_API_URL }}
+      MOCKING_URL: ${{ vars.MOCKING_URL }}
+      REQRES_API_KEY: ${{ secrets.REQRES_API_KEY }}
+      PARABANK_ADMIN_USERNAME: ${{ secrets.PARABANK_ADMIN_USERNAME }}
+      PARABANK_ADMIN_PASSWORD: ${{ secrets.PARABANK_ADMIN_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Resolve runtime options
+        id: runtime
+        shell: bash
+        env:
+          INPUT_SUITE: ${{ github.event_name == 'workflow_dispatch' && inputs.suite || 'playwright' }}
+          INPUT_GREP: ${{ github.event_name == 'workflow_dispatch' && inputs.grep || '' }}
+          INPUT_CUCUMBER_TAGS: ${{ github.event_name == 'workflow_dispatch' && inputs.cucumber_tags || '' }}
+          INPUT_PROJECT: ${{ github.event_name == 'workflow_dispatch' && inputs.project || 'all' }}
+          INPUT_HEADED: ${{ github.event_name == 'workflow_dispatch' && inputs.headed || 'false' }}
+        run: |
+          echo "suite=${INPUT_SUITE}" >> "$GITHUB_OUTPUT"
+          echo "grep=${INPUT_GREP}" >> "$GITHUB_OUTPUT"
+          echo "cucumber_tags=${INPUT_CUCUMBER_TAGS}" >> "$GITHUB_OUTPUT"
+          echo "project=${INPUT_PROJECT}" >> "$GITHUB_OUTPUT"
+          echo "headed=${INPUT_HEADED}" >> "$GITHUB_OUTPUT"
+
+      - name: Show selected environment URLs
+        shell: bash
+        run: |
+          echo "SUITE=${{ steps.runtime.outputs.suite }}"
+          echo "TEST_ENV=$TEST_ENV"
+          echo "SAUCEDEMO_URL=$SAUCEDEMO_URL"
+          echo "PARABANK_URL=$PARABANK_URL"
+          echo "CONTACT_LIST_URL=$CONTACT_LIST_URL"
+          echo "REQRES_API_URL=$REQRES_API_URL"
+          echo "MOCKING_URL=$MOCKING_URL"
+
+      - name: Run selected tests
+        shell: bash
+        run: |
+          if [ "${{ steps.runtime.outputs.suite }}" = "cucumber" ]; then
+            setup_cmd=(npx playwright test --project=admin-setup --project=user-setup --project=contact-list-api-auth-setup)
+            cucumber_cmd=(npx cucumber-js --config cucumber.cjs)
+
+            if [ -n "${{ steps.runtime.outputs.cucumber_tags }}" ]; then
+              cucumber_cmd+=(--tags "${{ steps.runtime.outputs.cucumber_tags }}")
+            fi
+
+            if [ "${{ steps.runtime.outputs.headed }}" = "true" ]; then
+              export HEADED=true
+            fi
+
+            printf 'Running setup command:'
+            printf ' %q' "${setup_cmd[@]}"
+            printf '\n'
+            "${setup_cmd[@]}"
+
+            printf 'Running cucumber command:'
+            printf ' %q' "${cucumber_cmd[@]}"
+            printf '\n'
+            "${cucumber_cmd[@]}"
+            exit 0
+          fi
+
+          cmd=(npx playwright test)
+
+          if [ -n "${{ steps.runtime.outputs.grep }}" ]; then
+            cmd+=(--grep "${{ steps.runtime.outputs.grep }}")
+          fi
+
+          if [ "${{ steps.runtime.outputs.project }}" != "all" ]; then
+            cmd+=(--project "${{ steps.runtime.outputs.project }}")
+          fi
+
+          if [ "${{ steps.runtime.outputs.headed }}" = "true" ]; then
+            cmd+=(--headed)
+          fi
+
+          printf 'Running command:'
+          printf ' %q' "${cmd[@]}"
+          printf '\n'
+          "${cmd[@]}"
+
+      - name: Upload Playwright HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_number }}
+          path: playwright-report/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload raw test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.run_number }}
+          path: test-results/
+          if-no-files-found: warn
+          retention-days: 30
