@@ -5,7 +5,7 @@ import {
   loginScenarios,
 } from "../../../../test-data/ui/login-data";
 
-test.describe("Login Page Tests", () => {
+test.describe("@ui @saucedemo Login Page Tests", () => {
   // Start each scenario from a fresh, unauthenticated login page.
   test.beforeEach(async ({ page }) => {
     const loginPage = new LoginPage(page);

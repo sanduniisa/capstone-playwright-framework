@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("Skipping saved authentication for specific tests", () => {
+test.describe("@ui @saucedemo Skipping saved authentication for specific tests", () => {
   test.use({
     // Start with empty state - no cookies, no localStorage.
     storageState: { cookies: [], origins: [] },

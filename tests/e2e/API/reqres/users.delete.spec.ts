@@ -19,7 +19,7 @@ const deleteTestCases = [
 ];
 
 for (const testCase of deleteTestCases) {
-	test(`${testCase.id} DELETE user ${testCase.description}`, async ({ usersAPI }) => {
+	test(`@api @reqres ${testCase.id} DELETE user ${testCase.description}`, async ({ usersAPI }) => {
 		const response = await usersAPI.deleteUser(testCase.userId);
 
 		// Level 1: DELETE returns the expected success status.

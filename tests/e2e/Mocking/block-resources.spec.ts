@@ -4,7 +4,7 @@ import { test, expect } from '../../../fixtures/mock-fixtures';
 // Test Suite: Block Resources with route.abort()
 // ---------------------------------------------------------------------------
 
-test.describe('Block Resources', () => {
+test.describe('@mocking Block Resources', () => {
   test('block all image requests by extension', async ({ page }) => {
     // Track how many images were blocked
     let blockedCount = 0;

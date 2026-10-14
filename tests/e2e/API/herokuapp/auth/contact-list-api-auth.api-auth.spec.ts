@@ -3,7 +3,7 @@ import { createContactPayload } from "../../../../../src/utils/contactListTestHe
 import type { Contact } from "../../../../../src/api/ContactListAPI";
 import { ContactListPage } from "../../../../../src/ui/pages/herokuapp/ContactListPage";
 
-test.describe("Contact List API with saved authentication", () => {
+test.describe("@api @contact-list-api Contact List API with saved authentication", () => {
   test("TC_API_AUTH_001 saved token can read contacts", async ({
     authenticatedContactAPI,
   }) => {

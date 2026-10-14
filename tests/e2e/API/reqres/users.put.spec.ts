@@ -32,7 +32,7 @@ const putTestCases: Array<{
 ];
 
 for (const testCase of putTestCases) {
-	test(`${testCase.id} PUT user ${testCase.description}`, async ({ usersAPI }) => {
+	test(`@api @reqres ${testCase.id} PUT user ${testCase.description}`, async ({ usersAPI }) => {
 		const response = await usersAPI.updateUser(
 			testCase.userId,
 			testCase.requestBody as unknown as UserPayload,

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { InventoryPage } from "../../../../src/ui/pages/saucedemo/InventoryPage";
 
-test.describe("User authenticated scenarios", () => {
+test.describe("@ui @saucedemo User authenticated scenarios", () => {
   test("TC_AUTH_USER_001 user session can add a product to the cart", async ({
     page,
   }) => {

@@ -1,7 +1,7 @@
 import { InventoryPage } from "../../../../src/ui/pages/saucedemo/InventoryPage";
 import { expect, test } from "../../../../fixtures/ui-role-auth-fixtures";
 
-test.describe("Admin and user sessions in separate contexts", () => {
+test.describe("@ui @saucedemo @multi-role Admin and user sessions in separate contexts", () => {
   test("TC_AUTH_MULTI_001 admin and user sessions keep separate carts", async ({
     adminPage,
     userPage,

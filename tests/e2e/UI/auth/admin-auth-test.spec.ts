@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { InventoryPage } from "../../../../src/ui/pages/saucedemo/InventoryPage";
 
-test.describe("Admin authenticated scenarios", () => {
+test.describe("@ui @saucedemo Admin authenticated scenarios", () => {
   test("TC_AUTH_ADMIN_001 admin session opens the product inventory", async ({
     page,
   }) => {

@@ -10,7 +10,7 @@ const FRUITS_API_PATTERN = '*/**/api/v1/fruits';
 // Test Suite: HAR Recording & Replay
 // ---------------------------------------------------------------------------
 
-test.describe('HAR Recording & Replay', () => {
+test.describe('@mocking HAR Recording & Replay', () => {
   /**
    * STEP 1 – Record a HAR file.
    *

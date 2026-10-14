@@ -35,7 +35,7 @@ function assertUserListResponse(
   expect(responseBody.data.length).toBe(expectedDataLength);
 }
 
-test.describe("ReqRes Users API GET Method", () => {
+test.describe("@api @reqres ReqRes Users API GET Method", () => {
   //checks the standard successful request: GET /users?page=2 returns 200, JSON, pagination fields, and valid user objects.
   test("TC001 GET users returns a valid user list", async ({ usersAPI }) => {
     const response = await usersAPI.getUsers(2);

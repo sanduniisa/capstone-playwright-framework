@@ -6,7 +6,7 @@ import { contactListScenarios } from "../../../../test-data/combined/contact-lis
  * The API and UI both use the Contact List App, so API-created data can be
  * verified through the browser and UI-created data can be read through API.
  */
-test.describe("Contact List API and UI scenarios", () => {
+test.describe("@api @ui @contact-list-api @contact-list-ui Contact List API and UI scenarios", () => {
   for (const scenario of contactListScenarios) {
     test(`${scenario.id} ${scenario.description}`, async ({ contactAPI, page }) => {
       await scenario.run({ contactAPI, page });
