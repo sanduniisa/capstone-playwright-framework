@@ -6,6 +6,6 @@ module.exports = {
       "tests/cucumber/support/**/*.ts",
       "tests/cucumber/steps/**/*.ts",
     ],
-    format: ["progress"],
+    format: ["progress", "allure-cucumberjs/reporter"],
   },
 };

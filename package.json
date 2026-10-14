@@ -8,7 +8,8 @@
     "test:e2e:auth-patterns": "playwright test tests/e2e/UI/auth/login-session-storage.spec.ts tests/e2e/UI/auth/admin-auth-skip.spec.ts --project=login-tests --project=admin-tests",
     "test:e2e:parallel-auth": "playwright test --project=multi-role-tests --workers=2",
     "test:cucumber:parallel-auth": "playwright test --project=admin-setup --project=user-setup && cucumber-js --config cucumber.cjs --tags @parallel-auth --parallel 2",
-    "test:e2e:bank": "playwright test --project=bank-admin-setup --project=bank-admin-tests"
+    "test:e2e:bank": "playwright test --project=bank-admin-setup --project=bank-admin-tests",
+    "report:allure": "allure generate allure-results --clean --output allure-report"
   },
   "keywords": [],
   "author": "",
@@ -18,6 +19,9 @@
     "@cucumber/cucumber": "^13.3.0",
     "@playwright/test": "^1.62.1",
     "@types/node": "^26.1.2",
+    "allure-commandline": "^2.46.1",
+    "allure-cucumberjs": "^3.13.0",
+    "allure-playwright": "^3.13.0",
     "tsx": "^4.23.15"
   }
 }

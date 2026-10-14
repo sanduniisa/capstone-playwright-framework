@@ -194,6 +194,8 @@ jobs:
       - name: Run selected tests
         shell: bash
         run: |
+          rm -rf allure-results allure-report
+
           if [ "${{ steps.runtime.outputs.suite }}" = "cucumber" ]; then
             setup_cmd=(npx playwright test --project=admin-setup --project=user-setup --project=contact-list-api-auth-setup)
             cucumber_cmd=(npx cucumber-js --config cucumber.cjs)
@@ -255,6 +257,38 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      - name: Check for Allure results
+        id: allure-results
+        if: ${{ always() && !cancelled() }}
+        shell: bash
+        run: |
+          if [ -d allure-results ] && find allure-results -type f -print -quit | grep -q .; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "No Allure result files were generated."
+          fi
+
+      - name: Set up Java for Allure CLI
+        if: ${{ always() && !cancelled() && steps.allure-results.outputs.present == 'true' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Generate Allure HTML report
+        if: ${{ always() && !cancelled() && steps.allure-results.outputs.present == 'true' }}
+        run: npx allure generate allure-results --clean --output allure-report
+
+      - name: Upload Allure HTML report
+        if: ${{ always() && !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-${{ github.run_number }}
+          path: allure-report/
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Check email notification configuration
         id: email-config
         if: ${{ always() && !cancelled() }}
@@ -294,5 +328,5 @@ jobs:
             Cucumber tags: ${{ github.event_name == 'workflow_dispatch' && inputs.cucumber_tags || 'all' }}
             Project: ${{ github.event_name == 'workflow_dispatch' && inputs.project || 'all' }}
 
-            View the run and download the Playwright report and test results:
+            View the run and download the Playwright report, Allure report, and test results:
             ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
