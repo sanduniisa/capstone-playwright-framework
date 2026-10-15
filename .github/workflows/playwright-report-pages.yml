@@ -188,6 +188,12 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Upload report for GitHub Pages
+        if: ${{ always() && !cancelled() && steps.report-check.outputs.available == 'true' }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./playwright-report
+
       - name: Upload test results artifact
         if: ${{ always() && !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -203,22 +209,15 @@ jobs:
     if: ${{ always() && !cancelled() && needs.test.outputs.report_available == 'true' }}
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Download HTML report artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: playwright-report-${{ github.run_number }}
-          path: playwright-report
-
-      - name: Deploy report to gh-pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages
-          publish_dir: ./playwright-report
-          destination_dir: reports/${{ github.run_number }}
-          keep_files: true
+      - name: Deploy report to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
       - name: Print report URL
-        run: echo "Report published at https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/reports/${{ github.run_number }}/"
+        run: echo "Latest report published at ${{ steps.deployment.outputs.page_url }}"
