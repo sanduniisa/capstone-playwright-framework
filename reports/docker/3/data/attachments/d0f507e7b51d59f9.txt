@@ -1,0 +1,1 @@
+✅ Standard user authentication state saved to: playwright/.auth/user.json

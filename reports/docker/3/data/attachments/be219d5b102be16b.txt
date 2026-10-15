@@ -1,0 +1,14 @@
+PASS: TC_006 opened the Your Cart page
+PASS: Initial cart item count is 3
+PASS: Continue Shopping button is visible and enabled
+PASS: Checkout button is visible and enabled
+PASS: Continued shopping and returned to the Products page
+PASS: Added Test.allTheThings() T-Shirt (Red)
+PASS: Inventory cart badge count is 4
+PASS: Final cart item count is 4
+PASS: Cart contains Sauce Labs Backpack
+PASS: Cart contains Sauce Labs Bike Light
+PASS: Cart contains Sauce Labs Bolt T-Shirt
+PASS: Cart contains Test.allTheThings() T-Shirt (Red)
+PASS: Final Checkout button is visible and enabled
+PASS: Checkout page opened

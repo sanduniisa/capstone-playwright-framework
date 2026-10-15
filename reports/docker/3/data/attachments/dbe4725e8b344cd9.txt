@@ -1,0 +1,10 @@
+PASS: TC_007 opened the Your Cart page
+PASS: Cart contains 3 products
+PASS: Checkout information page opened
+PASS: Checkout information was filled
+PASS: Checkout overview contains 3 products
+PASS: Order summary contains subtotal, tax, and total
+PASS: Checkout completion title is displayed
+PASS: Thank you for your order! is displayed
+PASS: Back Home button is visible and enabled
+PASS: Generate PDF Order button is visible and enabled

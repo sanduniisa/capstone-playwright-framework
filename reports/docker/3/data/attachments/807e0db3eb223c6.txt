@@ -1,0 +1,5 @@
+PASS: Browser title is Swag Labs
+PASS: Inventory page title is Products
+PASS: Cart product count is 3
+PASS: Remove button count is 3
+PASS: Cart page title is Your Cart
