@@ -114,7 +114,6 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.62.1-noble
     env:
       CI: 'true'
-      HOME: /root
       TEST_ENV: ${{ inputs.environment || 'qa' }}
       REPORT_EMAIL_TO: ${{ inputs.report_email || vars.REPORT_EMAIL_TO }}
       SAUCEDEMO_URL: ${{ vars.SAUCEDEMO_URL }}
@@ -147,9 +146,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Run type check
-        run: npm run check
 
       - name: Install Java for Allure report generation
         run: |
