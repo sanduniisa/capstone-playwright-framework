@@ -1,0 +1,82 @@
+name: Publish Playwright Reports to GitHub Pages
+
+on:
+  workflow_run:
+    workflows:
+      - Playwright And Cucumber Tests
+      - Playwright And Cucumber Tests (Docker)
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: github-pages-reports
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish completed run's Allure report
+    if: ${{ github.event.workflow_run.conclusion != 'cancelled' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Select source artifact and report path
+        id: source
+        shell: bash
+        env:
+          SOURCE_WORKFLOW: ${{ github.event.workflow_run.name }}
+          SOURCE_RUN_NUMBER: ${{ github.event.workflow_run.run_number }}
+        run: |
+          if [[ "$SOURCE_WORKFLOW" == *"(Docker)"* ]]; then
+            echo "kind=docker" >> "$GITHUB_OUTPUT"
+            echo "artifact=allure-report-docker-${SOURCE_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          else
+            echo "kind=standard" >> "$GITHUB_OUTPUT"
+            echo "artifact=allure-report-${SOURCE_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download source run's Allure report
+        id: download-report
+        continue-on-error: true
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ steps.source.outputs.artifact }}
+          path: published-report
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Check downloaded report
+        id: report-check
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          if [ -f published-report/index.html ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Source workflow did not leave an Allure HTML report artifact; nothing to publish."
+          fi
+
+      - name: Deploy report to gh-pages
+        if: ${{ always() && steps.report-check.outputs.available == 'true' }}
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./published-report
+          destination_dir: reports/${{ steps.source.outputs.kind }}/${{ github.event.workflow_run.run_number }}
+          keep_files: true
+
+      - name: Publish report URL to summary
+        if: ${{ always() && steps.report-check.outputs.available == 'true' }}
+        shell: bash
+        env:
+          SOURCE_KIND: ${{ steps.source.outputs.kind }}
+          SOURCE_RUN_NUMBER: ${{ github.event.workflow_run.run_number }}
+        run: |
+          report_url="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/reports/${SOURCE_KIND}/${SOURCE_RUN_NUMBER}/"
+          echo "Report published at: ${report_url}"
+          echo "## Allure report" >> "$GITHUB_STEP_SUMMARY"
+          echo "[Open the ${SOURCE_KIND} run report](${report_url})" >> "$GITHUB_STEP_SUMMARY"
