@@ -1,0 +1,224 @@
+name: Playwright Report (GitHub Pages)
+
+on:
+  workflow_dispatch:
+    inputs:
+      grep:
+        description: Playwright title/tag filter.
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - '@api'
+          - '@ui'
+          - '@saucedemo'
+          - '@mocking'
+          - '@reqres'
+          - '@contact-list-api'
+          - '@contact-list-ui'
+          - '@multi-role'
+          - '@parallel-auth'
+          - '@parabank'
+          - '@session-storage'
+          - '@api|@ui'
+          - '@api|@mocking'
+          - '@ui|@mocking'
+          - '@api|@ui|@mocking'
+          - TC_AUTH_
+          - TC_SESSION_
+          - TC_BANK_
+          - Contact List
+          - HAR Recording & Replay
+      project:
+        description: Playwright project to run.
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - admin-tests
+          - user-tests
+          - login-tests
+          - multi-role-tests
+          - bank-admin-tests
+          - ui-chromium
+          - mocking
+          - reqres-api
+          - contact-list-combined
+          - contact-list-api-auth-tests
+      environment:
+        description: Target environment URL set.
+        required: false
+        default: qa
+        type: choice
+        options:
+          - qa
+          - stg
+          - prod
+      headed:
+        description: Run browsers in headed mode.
+        required: false
+        default: false
+        type: boolean
+
+  # Optional nightly publication; enable when desired.
+  # schedule:
+  #   - cron: '0 5 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages-reports
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Run Playwright tests and build report
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: ${{ inputs.environment || 'qa' }}
+    outputs:
+      report_available: ${{ steps.report-check.outputs.available }}
+    env:
+      CI: 'true'
+      TEST_ENV: ${{ inputs.environment || 'qa' }}
+      SAUCEDEMO_URL: ${{ vars.SAUCEDEMO_URL }}
+      PARABANK_URL: ${{ vars.PARABANK_URL }}
+      CONTACT_LIST_URL: ${{ vars.CONTACT_LIST_URL }}
+      REQRES_API_URL: ${{ vars.REQRES_API_URL }}
+      MOCKING_URL: ${{ vars.MOCKING_URL }}
+      QA_SAUCEDEMO_URL: ${{ vars.QA_SAUCEDEMO_URL }}
+      QA_PARABANK_URL: ${{ vars.QA_PARABANK_URL }}
+      QA_CONTACT_LIST_URL: ${{ vars.QA_CONTACT_LIST_URL }}
+      QA_REQRES_API_URL: ${{ vars.QA_REQRES_API_URL }}
+      QA_MOCKING_URL: ${{ vars.QA_MOCKING_URL }}
+      STG_SAUCEDEMO_URL: ${{ vars.STG_SAUCEDEMO_URL }}
+      STG_PARABANK_URL: ${{ vars.STG_PARABANK_URL }}
+      STG_CONTACT_LIST_URL: ${{ vars.STG_CONTACT_LIST_URL }}
+      STG_REQRES_API_URL: ${{ vars.STG_REQRES_API_URL }}
+      STG_MOCKING_URL: ${{ vars.STG_MOCKING_URL }}
+      PROD_SAUCEDEMO_URL: ${{ vars.PROD_SAUCEDEMO_URL }}
+      PROD_PARABANK_URL: ${{ vars.PROD_PARABANK_URL }}
+      PROD_CONTACT_LIST_URL: ${{ vars.PROD_CONTACT_LIST_URL }}
+      PROD_REQRES_API_URL: ${{ vars.PROD_REQRES_API_URL }}
+      PROD_MOCKING_URL: ${{ vars.PROD_MOCKING_URL }}
+      REQRES_API_KEY: ${{ secrets.REQRES_API_KEY }}
+      PARABANK_ADMIN_USERNAME: ${{ secrets.PARABANK_ADMIN_USERNAME }}
+      PARABANK_ADMIN_PASSWORD: ${{ secrets.PARABANK_ADMIN_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Resolve runtime options
+        id: runtime
+        shell: bash
+        env:
+          INPUT_GREP: ${{ inputs.grep || 'all' }}
+          INPUT_PROJECT: ${{ inputs.project || 'all' }}
+          INPUT_HEADED: ${{ inputs.headed || 'false' }}
+        run: |
+          if [ "$INPUT_GREP" = "all" ]; then INPUT_GREP=""; fi
+          echo "grep=${INPUT_GREP}" >> "$GITHUB_OUTPUT"
+          echo "project=${INPUT_PROJECT}" >> "$GITHUB_OUTPUT"
+          echo "headed=${INPUT_HEADED}" >> "$GITHUB_OUTPUT"
+
+      - name: Run Playwright tests
+        shell: bash
+        run: |
+          rm -rf playwright-report
+          cmd=(npx playwright test)
+
+          if [ -n "${{ steps.runtime.outputs.grep }}" ]; then
+            cmd+=(--grep "${{ steps.runtime.outputs.grep }}")
+          fi
+
+          if [ "${{ steps.runtime.outputs.project }}" != "all" ]; then
+            cmd+=(--project "${{ steps.runtime.outputs.project }}")
+          elif [ -z "$PARABANK_ADMIN_USERNAME" ] || [ -z "$PARABANK_ADMIN_PASSWORD" ]; then
+            echo "Bank credentials are not configured; excluding bank-admin-tests from this run."
+            cmd+=(--project admin-tests --project user-tests --project login-tests --project multi-role-tests --project ui-chromium --project mocking --project reqres-api --project contact-list-combined --project contact-list-api-auth-tests)
+          fi
+
+          if [ "${{ steps.runtime.outputs.headed }}" = "true" ]; then
+            cmd+=(--headed)
+          fi
+
+          printf 'Running command:'
+          printf ' %q' "${cmd[@]}"
+          printf '\n'
+          if [ "${{ steps.runtime.outputs.headed }}" = "true" ]; then
+            xvfb-run -a "${cmd[@]}"
+          else
+            "${cmd[@]}"
+          fi
+
+      - name: Check for HTML report
+        id: report-check
+        if: ${{ always() && !cancelled() }}
+        shell: bash
+        run: |
+          if [ -f playwright-report/index.html ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Playwright did not produce an HTML report."
+          fi
+
+      - name: Upload HTML report artifact
+        if: ${{ always() && !cancelled() && steps.report-check.outputs.available == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_number }}
+          path: playwright-report/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload test results artifact
+        if: ${{ always() && !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results-${{ github.run_number }}
+          path: test-results/
+          if-no-files-found: warn
+          retention-days: 30
+
+  deploy-report:
+    name: Publish report to GitHub Pages
+    needs: test
+    if: ${{ always() && !cancelled() && needs.test.outputs.report_available == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download HTML report artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: playwright-report-${{ github.run_number }}
+          path: playwright-report
+
+      - name: Deploy report to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./playwright-report
+          destination_dir: reports/${{ github.run_number }}
+          keep_files: true
+
+      - name: Print report URL
+        run: echo "Report published at https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/reports/${{ github.run_number }}/"
