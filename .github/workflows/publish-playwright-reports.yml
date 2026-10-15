@@ -10,7 +10,8 @@ on:
 
 permissions:
   actions: read
-  contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: github-pages-reports
@@ -21,6 +22,9 @@ jobs:
     name: Publish completed run's Allure report
     if: ${{ github.event.workflow_run.conclusion != 'cancelled' }}
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Select source artifact and report path
         id: source
@@ -59,15 +63,16 @@ jobs:
             echo "Source workflow did not leave an Allure HTML report artifact; nothing to publish."
           fi
 
-      - name: Deploy report to gh-pages
+      - name: Upload report for GitHub Pages
         if: ${{ always() && steps.report-check.outputs.available == 'true' }}
-        uses: peaceiris/actions-gh-pages@v4
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages
-          publish_dir: ./published-report
-          destination_dir: reports/${{ steps.source.outputs.kind }}/${{ github.event.workflow_run.run_number }}
-          keep_files: true
+          path: ./published-report
+
+      - name: Deploy report to GitHub Pages
+        id: deployment
+        if: ${{ always() && steps.report-check.outputs.available == 'true' }}
+        uses: actions/deploy-pages@v4
 
       - name: Publish report URL to summary
         if: ${{ always() && steps.report-check.outputs.available == 'true' }}
@@ -76,7 +81,8 @@ jobs:
           SOURCE_KIND: ${{ steps.source.outputs.kind }}
           SOURCE_RUN_NUMBER: ${{ github.event.workflow_run.run_number }}
         run: |
-          report_url="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/reports/${SOURCE_KIND}/${SOURCE_RUN_NUMBER}/"
-          echo "Report published at: ${report_url}"
+          report_url="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/"
+          echo "Latest report published at: ${report_url}"
           echo "## Allure report" >> "$GITHUB_STEP_SUMMARY"
-          echo "[Open the ${SOURCE_KIND} run report](${report_url})" >> "$GITHUB_STEP_SUMMARY"
+          echo "Source: ${SOURCE_KIND} run ${SOURCE_RUN_NUMBER}" >> "$GITHUB_STEP_SUMMARY"
+          echo "[Open the latest report](${report_url})" >> "$GITHUB_STEP_SUMMARY"
