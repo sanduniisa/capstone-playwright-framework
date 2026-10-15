@@ -1,0 +1,292 @@
+name: Playwright And Cucumber Tests (Docker)
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Test suite to run.
+        required: false
+        default: playwright
+        type: choice
+        options:
+          - playwright
+          - cucumber
+      grep:
+        description: Playwright title/tag filter.
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - '@api'
+          - '@ui'
+          - '@saucedemo'
+          - '@mocking'
+          - '@reqres'
+          - '@contact-list-api'
+          - '@contact-list-ui'
+          - '@multi-role'
+          - '@parallel-auth'
+          - '@parabank'
+          - '@session-storage'
+          - '@api|@ui'
+          - '@api|@mocking'
+          - '@ui|@mocking'
+          - '@api|@ui|@mocking'
+          - TC_AUTH_
+          - TC_SESSION_
+          - TC_BANK_
+          - Contact List
+          - HAR Recording & Replay
+      cucumber_tags:
+        description: Cucumber tag expression.
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - '@api'
+          - '@contact-list-api'
+          - '@contact-list-ui'
+          - '@integration'
+          - '@mocking'
+          - '@parallel-auth'
+          - '@reqres'
+          - '@saucedemo'
+          - '@ui'
+          - '@api or @ui'
+          - '@api or @mocking'
+          - '@ui or @mocking'
+          - '@api or @ui or @mocking'
+          - '@reqres or @contact-list-api'
+          - '@saucedemo or @contact-list-ui'
+      project:
+        description: Playwright project to run. Ignored for Cucumber.
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - admin-tests
+          - user-tests
+          - login-tests
+          - multi-role-tests
+          - bank-admin-tests
+          - ui-chromium
+          - mocking
+          - reqres-api
+          - contact-list-combined
+          - contact-list-api-auth-tests
+      environment:
+        description: Target environment URL set.
+        required: false
+        default: qa
+        type: choice
+        options:
+          - qa
+          - stg
+          - prod
+      headed:
+        description: Run browsers in headed mode where applicable.
+        required: false
+        default: false
+        type: boolean
+      report_email:
+        description: Email address for this run's report. Leave blank to use REPORT_EMAIL_TO.
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: playwright-docker-${{ github.workflow }}-${{ github.ref }}-${{ inputs.environment || 'qa' }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Run tests in Microsoft Playwright container
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: ${{ inputs.environment || 'qa' }}
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+    env:
+      CI: 'true'
+      HOME: /root
+      TEST_ENV: ${{ inputs.environment || 'qa' }}
+      REPORT_EMAIL_TO: ${{ inputs.report_email || vars.REPORT_EMAIL_TO }}
+      SAUCEDEMO_URL: ${{ vars.SAUCEDEMO_URL }}
+      PARABANK_URL: ${{ vars.PARABANK_URL }}
+      CONTACT_LIST_URL: ${{ vars.CONTACT_LIST_URL }}
+      REQRES_API_URL: ${{ vars.REQRES_API_URL }}
+      MOCKING_URL: ${{ vars.MOCKING_URL }}
+      QA_SAUCEDEMO_URL: ${{ vars.QA_SAUCEDEMO_URL }}
+      QA_PARABANK_URL: ${{ vars.QA_PARABANK_URL }}
+      QA_CONTACT_LIST_URL: ${{ vars.QA_CONTACT_LIST_URL }}
+      QA_REQRES_API_URL: ${{ vars.QA_REQRES_API_URL }}
+      QA_MOCKING_URL: ${{ vars.QA_MOCKING_URL }}
+      STG_SAUCEDEMO_URL: ${{ vars.STG_SAUCEDEMO_URL }}
+      STG_PARABANK_URL: ${{ vars.STG_PARABANK_URL }}
+      STG_CONTACT_LIST_URL: ${{ vars.STG_CONTACT_LIST_URL }}
+      STG_REQRES_API_URL: ${{ vars.STG_REQRES_API_URL }}
+      STG_MOCKING_URL: ${{ vars.STG_MOCKING_URL }}
+      PROD_SAUCEDEMO_URL: ${{ vars.PROD_SAUCEDEMO_URL }}
+      PROD_PARABANK_URL: ${{ vars.PROD_PARABANK_URL }}
+      PROD_CONTACT_LIST_URL: ${{ vars.PROD_CONTACT_LIST_URL }}
+      PROD_REQRES_API_URL: ${{ vars.PROD_REQRES_API_URL }}
+      PROD_MOCKING_URL: ${{ vars.PROD_MOCKING_URL }}
+      REQRES_API_KEY: ${{ secrets.REQRES_API_KEY }}
+      PARABANK_ADMIN_USERNAME: ${{ secrets.PARABANK_ADMIN_USERNAME }}
+      PARABANK_ADMIN_PASSWORD: ${{ secrets.PARABANK_ADMIN_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run type check
+        run: npm run check
+
+      - name: Install Java for Allure report generation
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends openjdk-17-jre-headless
+          rm -rf /var/lib/apt/lists/*
+
+      - name: Resolve runtime options
+        id: runtime
+        shell: bash
+        env:
+          INPUT_SUITE: ${{ inputs.suite || 'playwright' }}
+          INPUT_GREP: ${{ inputs.grep || 'all' }}
+          INPUT_CUCUMBER_TAGS: ${{ inputs.cucumber_tags || 'all' }}
+          INPUT_PROJECT: ${{ inputs.project || 'all' }}
+          INPUT_HEADED: ${{ inputs.headed || 'false' }}
+        run: |
+          if [ "$INPUT_GREP" = "all" ]; then INPUT_GREP=""; fi
+          if [ "$INPUT_CUCUMBER_TAGS" = "all" ]; then INPUT_CUCUMBER_TAGS=""; fi
+          echo "suite=${INPUT_SUITE}" >> "$GITHUB_OUTPUT"
+          echo "grep=${INPUT_GREP}" >> "$GITHUB_OUTPUT"
+          echo "cucumber_tags=${INPUT_CUCUMBER_TAGS}" >> "$GITHUB_OUTPUT"
+          echo "project=${INPUT_PROJECT}" >> "$GITHUB_OUTPUT"
+          echo "headed=${INPUT_HEADED}" >> "$GITHUB_OUTPUT"
+
+      - name: Run selected tests
+        shell: bash
+        run: |
+          rm -rf allure-results allure-report
+
+          if [ "${{ steps.runtime.outputs.suite }}" = "cucumber" ]; then
+            setup_cmd=(npx playwright test --project=admin-setup --project=user-setup --project=contact-list-api-auth-setup)
+            cucumber_cmd=(npx cucumber-js --config cucumber.cjs)
+            selected_tags="${{ steps.runtime.outputs.cucumber_tags }}"
+
+            if [ -n "$selected_tags" ]; then
+              cucumber_cmd+=(--tags "$selected_tags")
+            fi
+
+            if [ -z "$selected_tags" ]; then
+              if [ -n "$PARABANK_ADMIN_USERNAME" ] && [ -n "$PARABANK_ADMIN_PASSWORD" ]; then
+                setup_cmd+=(--project bank-admin-setup)
+              else
+                cucumber_cmd+=(--tags "not @parabank")
+                echo "Skipping @parabank scenarios because bank credentials are not configured."
+              fi
+            elif [[ "$selected_tags" == *"@parabank"* ]]; then
+              setup_cmd+=(--project bank-admin-setup)
+            fi
+
+            if [ "${{ steps.runtime.outputs.headed }}" = "true" ]; then export HEADED=true; fi
+            "${setup_cmd[@]}"
+            "${cucumber_cmd[@]}"
+            exit 0
+          fi
+
+          cmd=(npx playwright test)
+          if [ -n "${{ steps.runtime.outputs.grep }}" ]; then cmd+=(--grep "${{ steps.runtime.outputs.grep }}"); fi
+          if [ "${{ steps.runtime.outputs.project }}" != "all" ]; then cmd+=(--project "${{ steps.runtime.outputs.project }}"); fi
+          if [ "${{ steps.runtime.outputs.headed }}" = "true" ]; then cmd+=(--headed); fi
+          "${cmd[@]}"
+
+      - name: Upload Playwright and Cucumber artifacts
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts-${{ github.run_number }}
+          path: |
+            playwright-report/
+            test-results/
+            cucumber-report.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Check for Allure results
+        id: allure-results
+        if: ${{ always() && !cancelled() }}
+        shell: bash
+        run: |
+          if [ -d allure-results ] && find allure-results -type f -print -quit | grep -q .; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "No Allure result files were generated."
+          fi
+
+      - name: Generate Allure HTML report
+        if: ${{ always() && !cancelled() && steps.allure-results.outputs.present == 'true' }}
+        run: npx allure generate allure-results --clean --output allure-report
+
+      - name: Upload Allure HTML report
+        if: ${{ always() && !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-docker-${{ github.run_number }}
+          path: allure-report/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Check email notification configuration
+        id: email-config
+        if: ${{ always() && !cancelled() }}
+        shell: bash
+        env:
+          SMTP_HOST: ${{ vars.SMTP_HOST }}
+          SMTP_PORT: ${{ vars.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          REPORT_EMAIL_TO: ${{ env.REPORT_EMAIL_TO }}
+        run: |
+          if [[ -n "$SMTP_HOST" && -n "$SMTP_PORT" && -n "$SMTP_USERNAME" && -n "$SMTP_PASSWORD" && -n "$REPORT_EMAIL_TO" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Email notification skipped: configure SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, and REPORT_EMAIL_TO."
+          fi
+
+      - name: Email workflow result
+        if: ${{ always() && !cancelled() && steps.email-config.outputs.enabled == 'true' }}
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ vars.SMTP_HOST }}
+          server_port: ${{ vars.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          to: ${{ env.REPORT_EMAIL_TO }}
+          from: ${{ vars.REPORT_EMAIL_FROM || secrets.SMTP_USERNAME }}
+          subject: "[${{ job.status }}] ${{ github.repository }} - Docker - ${{ inputs.suite || 'playwright' }} - ${{ inputs.environment || 'qa' }}"
+          body: |
+            The Docker-based GitHub Actions test workflow has completed.
+
+            Status: ${{ job.status }}
+            Suite: ${{ inputs.suite || 'playwright' }}
+            Environment: ${{ inputs.environment || 'qa' }}
+            Playwright grep: ${{ inputs.grep || 'all' }}
+            Cucumber tags: ${{ inputs.cucumber_tags || 'all' }}
+            Project: ${{ inputs.project || 'all' }}
+
+            View the run and download the Allure and test artifacts:
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
