@@ -275,6 +275,13 @@ jobs:
     needs: [setup, playwright-tests]
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.pages-deployment.outputs.page_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -448,3 +455,57 @@ jobs:
           path: sharded-pages-report/
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Upload report bundle to GitHub Pages
+        if: ${{ always() && !cancelled() && hashFiles('sharded-pages-report/index.html') != '' }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: sharded-pages-report/
+
+      - name: Deploy sharded reports to GitHub Pages
+        id: pages-deployment
+        if: ${{ always() && !cancelled() && hashFiles('sharded-pages-report/index.html') != '' }}
+        uses: actions/deploy-pages@v4
+
+      - name: Print published report links
+        if: ${{ always() && !cancelled() && hashFiles('sharded-pages-report/index.html') != '' }}
+        shell: bash
+        env:
+          PAGES_URL: ${{ steps.pages-deployment.outputs.page_url }}
+          REPORT_MODE: ${{ inputs.report_mode || 'both' }}
+        run: |
+          echo "## Sharded Playwright reports" >> "$GITHUB_STEP_SUMMARY"
+          echo "Report mode: ${REPORT_MODE}" >> "$GITHUB_STEP_SUMMARY"
+          echo "[Open report landing page](${PAGES_URL})" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -f sharded-pages-report/shard-test-index.html ]; then
+            echo "[Search test case IDs and shard assignments](${PAGES_URL}shard-test-index.html)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ -f sharded-pages-report/allure/index.html ]; then
+            echo "[Open merged Allure report](${PAGES_URL}allure/)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ -f sharded-pages-report/shards/index.html ]; then
+            echo "[Open individual shard reports](${PAGES_URL}shards/)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Publish report links to workflow summary
+        if: ${{ always() && !cancelled() && hashFiles('sharded-pages-report/index.html') != '' }}
+        shell: bash
+        env:
+          REPORT_MODE: ${{ inputs.report_mode || 'both' }}
+          PAGES_URL: ${{ steps.pages-deployment.outputs.page_url }}
+        run: |
+          echo "## Sharded Playwright reports" >> "$GITHUB_STEP_SUMMARY"
+          echo "Mode: ${REPORT_MODE}" >> "$GITHUB_STEP_SUMMARY"
+          echo "[Open report landing page](${PAGES_URL})" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f sharded-pages-report/shard-test-index.html ]; then
+            echo "[Search test case IDs and shard assignments](${PAGES_URL}shard-test-index.html)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ -f sharded-pages-report/allure/index.html ]; then
+            echo "[Open merged Allure report](${PAGES_URL}allure/)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ -f sharded-pages-report/shards/index.html ]; then
+            echo "[Open individual shard reports](${PAGES_URL}shards/)" >> "$GITHUB_STEP_SUMMARY"
+          fi
