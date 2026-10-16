@@ -5,6 +5,15 @@ node_modules/
 /playwright-report/
 /allure-results/
 /allure-report/
+/allure-report-shard-*/
 /blob-report/
+/shard-results-*.json
+/all-blob-reports/
+/all-shard-json/
+/all-shard-playwright-reports/
+/all-shard-allure-reports/
+/all-allure-results/
+/merged-allure-report/
+/sharded-pages-report/
 /playwright/.cache/
 /playwright/.auth/

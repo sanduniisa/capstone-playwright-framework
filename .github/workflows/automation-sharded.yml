@@ -1,0 +1,450 @@
+name: Playwright Tests (Sharded)
+
+on:
+  workflow_dispatch:
+    inputs:
+      grep:
+        description: Playwright title/tag filter.
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - '@api'
+          - '@ui'
+          - '@saucedemo'
+          - '@mocking'
+          - '@reqres'
+          - '@contact-list-api'
+          - '@contact-list-ui'
+          - '@multi-role'
+          - '@parallel-auth'
+          - '@parabank'
+          - '@session-storage'
+          - '@api|@ui'
+          - '@api|@mocking'
+          - '@ui|@mocking'
+          - '@api|@ui|@mocking'
+          - TC_AUTH_
+          - TC_SESSION_
+          - TC_BANK_
+          - Contact List
+          - HAR Recording & Replay
+      project:
+        description: Playwright project to run.
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - admin-tests
+          - user-tests
+          - login-tests
+          - multi-role-tests
+          - bank-admin-tests
+          - ui-chromium
+          - mocking
+          - reqres-api
+          - contact-list-combined
+          - contact-list-api-auth-tests
+      environment:
+        description: Target environment URL set.
+        required: false
+        default: qa
+        type: choice
+        options:
+          - qa
+          - stg
+          - prod
+      shard_total:
+        description: Number of parallel shards.
+        required: false
+        default: '4'
+        type: choice
+        options:
+          - '2'
+          - '3'
+          - '4'
+          - '6'
+          - '8'
+      report_mode:
+        description: Choose merged reports, separate per-shard reports, or both.
+        required: false
+        default: both
+        type: choice
+        options:
+          - merged
+          - per-shard
+          - both
+      headed:
+        description: Run browsers in headed mode.
+        required: false
+        default: false
+        type: boolean
+
+  # Optional weekly sharded run; enable when desired.
+  # schedule:
+  #   - cron: '0 3 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: playwright-sharded-${{ github.workflow }}-${{ github.ref }}-${{ inputs.environment || 'qa' }}
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    name: Create shard matrix
+    runs-on: ubuntu-latest
+    outputs:
+      shard_total: ${{ steps.matrix.outputs.shard_total }}
+      shard_indices: ${{ steps.matrix.outputs.shard_indices }}
+    steps:
+      - name: Compute shard indices
+        id: matrix
+        shell: bash
+        env:
+          REQUESTED_SHARDS: ${{ inputs.shard_total || '4' }}
+        run: |
+          case "$REQUESTED_SHARDS" in
+            2|3|4|6|8) ;;
+            *) echo "Unsupported shard count: $REQUESTED_SHARDS" >&2; exit 1 ;;
+          esac
+          indices=$(seq 1 "$REQUESTED_SHARDS" | jq -sc .)
+          echo "shard_total=$REQUESTED_SHARDS" >> "$GITHUB_OUTPUT"
+          echo "shard_indices=$indices" >> "$GITHUB_OUTPUT"
+
+  playwright-tests:
+    name: Playwright shard ${{ matrix.shard_index }}/${{ needs.setup.outputs.shard_total }}
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        shard_index: ${{ fromJson(needs.setup.outputs.shard_indices) }}
+    environment: ${{ inputs.environment || 'qa' }}
+    env:
+      CI: 'true'
+      PLAYWRIGHT_REPORT_MODE: ${{ inputs.report_mode || 'both' }}
+      PLAYWRIGHT_BLOB_REPORT: ${{ inputs.report_mode != 'per-shard' && 'true' || 'false' }}
+      PLAYWRIGHT_SHARD_INDEX: ${{ matrix.shard_index }}
+      PLAYWRIGHT_SHARD_TOTAL: ${{ needs.setup.outputs.shard_total }}
+      PLAYWRIGHT_JSON_REPORT: shard-results-${{ matrix.shard_index }}.json
+      TEST_ENV: ${{ inputs.environment || 'qa' }}
+      SAUCEDEMO_URL: ${{ vars.SAUCEDEMO_URL }}
+      PARABANK_URL: ${{ vars.PARABANK_URL }}
+      CONTACT_LIST_URL: ${{ vars.CONTACT_LIST_URL }}
+      REQRES_API_URL: ${{ vars.REQRES_API_URL }}
+      MOCKING_URL: ${{ vars.MOCKING_URL }}
+      QA_SAUCEDEMO_URL: ${{ vars.QA_SAUCEDEMO_URL }}
+      QA_PARABANK_URL: ${{ vars.QA_PARABANK_URL }}
+      QA_CONTACT_LIST_URL: ${{ vars.QA_CONTACT_LIST_URL }}
+      QA_REQRES_API_URL: ${{ vars.QA_REQRES_API_URL }}
+      QA_MOCKING_URL: ${{ vars.QA_MOCKING_URL }}
+      STG_SAUCEDEMO_URL: ${{ vars.STG_SAUCEDEMO_URL }}
+      STG_PARABANK_URL: ${{ vars.STG_PARABANK_URL }}
+      STG_CONTACT_LIST_URL: ${{ vars.STG_CONTACT_LIST_URL }}
+      STG_REQRES_API_URL: ${{ vars.STG_REQRES_API_URL }}
+      STG_MOCKING_URL: ${{ vars.STG_MOCKING_URL }}
+      PROD_SAUCEDEMO_URL: ${{ vars.PROD_SAUCEDEMO_URL }}
+      PROD_PARABANK_URL: ${{ vars.PROD_PARABANK_URL }}
+      PROD_CONTACT_LIST_URL: ${{ vars.PROD_CONTACT_LIST_URL }}
+      PROD_MOCKING_URL: ${{ vars.PROD_MOCKING_URL }}
+      REQRES_API_KEY: ${{ secrets.REQRES_API_KEY }}
+      PARABANK_ADMIN_USERNAME: ${{ secrets.PARABANK_ADMIN_USERNAME }}
+      PARABANK_ADMIN_PASSWORD: ${{ secrets.PARABANK_ADMIN_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Set up Java for per-shard Allure report
+        if: ${{ inputs.report_mode != 'merged' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Run Playwright shard
+        shell: bash
+        env:
+          INPUT_GREP: ${{ inputs.grep || 'all' }}
+          INPUT_PROJECT: ${{ inputs.project || 'all' }}
+          INPUT_HEADED: ${{ inputs.headed || 'false' }}
+          SHARD_INDEX: ${{ matrix.shard_index }}
+          SHARD_TOTAL: ${{ needs.setup.outputs.shard_total }}
+        run: |
+          rm -rf allure-results allure-report playwright-report blob-report "shard-results-${SHARD_INDEX}.json"
+          cmd=(npx playwright test "--shard=${SHARD_INDEX}/${SHARD_TOTAL}")
+
+          if [ "$INPUT_GREP" != "all" ]; then cmd+=(--grep "$INPUT_GREP"); fi
+          if [ "$INPUT_PROJECT" != "all" ]; then
+            cmd+=(--project "$INPUT_PROJECT")
+          elif [ -z "$PARABANK_ADMIN_USERNAME" ] || [ -z "$PARABANK_ADMIN_PASSWORD" ]; then
+            echo "Bank credentials are not configured; excluding bank-admin-tests from this shard run."
+            cmd+=(--project admin-tests --project user-tests --project login-tests --project multi-role-tests --project ui-chromium --project mocking --project reqres-api --project contact-list-combined --project contact-list-api-auth-tests)
+          fi
+
+          printf 'Running command:'
+          printf ' %q' "${cmd[@]}"
+          printf '\n'
+          if [ "$INPUT_HEADED" = "true" ]; then
+            xvfb-run -a "${cmd[@]}"
+          else
+            "${cmd[@]}"
+          fi
+
+      - name: Add shard and case ID labels to Allure results
+        if: ${{ always() && !cancelled() }}
+        env:
+          SHARD_INDEX: ${{ matrix.shard_index }}
+          SHARD_TOTAL: ${{ needs.setup.outputs.shard_total }}
+        run: node scripts/shard-report-tools.cjs annotate allure-results "$SHARD_INDEX" "$SHARD_TOTAL"
+
+      - name: Generate this shard's test case index
+        if: ${{ always() && !cancelled() && hashFiles('shard-results-*.json') != '' }}
+        run: node scripts/shard-report-tools.cjs index . playwright-report/shard-test-index.html false
+
+      - name: Generate this shard's Allure report
+        if: ${{ always() && !cancelled() && inputs.report_mode != 'merged' && hashFiles('allure-results/*-result.json') != '' }}
+        env:
+          SHARD_INDEX: ${{ matrix.shard_index }}
+        run: npx allure generate allure-results --clean --output "allure-report-shard-${SHARD_INDEX}"
+
+      - name: Upload this shard's Playwright HTML report
+        if: ${{ always() && !cancelled() && inputs.report_mode != 'merged' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-shard-${{ matrix.shard_index }}
+          path: playwright-report/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload this shard's Allure report
+        if: ${{ always() && !cancelled() && inputs.report_mode != 'merged' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-shard-${{ matrix.shard_index }}
+          path: allure-report-shard-${{ matrix.shard_index }}/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload this shard's Blob report
+        if: ${{ always() && !cancelled() && inputs.report_mode != 'per-shard' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: blob-report-${{ matrix.shard_index }}
+          path: blob-report/
+          if-no-files-found: warn
+          retention-days: 1
+
+      - name: Upload this shard's raw Allure results
+        if: ${{ always() && !cancelled() && inputs.report_mode != 'per-shard' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-shard-${{ matrix.shard_index }}
+          path: allure-results/
+          if-no-files-found: warn
+          retention-days: 1
+
+      - name: Upload this shard's JSON test index data
+        if: ${{ always() && !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: shard-test-index-${{ matrix.shard_index }}
+          path: shard-results-${{ matrix.shard_index }}.json
+          if-no-files-found: warn
+          retention-days: 1
+
+  merge-reports:
+    name: Merge shard reports
+    needs: [setup, playwright-tests]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up Java for Allure report generation
+        if: ${{ inputs.report_mode != 'per-shard' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Download Blob reports from all shards
+        if: ${{ inputs.report_mode != 'per-shard' }}
+        uses: actions/download-artifact@v5
+        with:
+          path: all-blob-reports
+          pattern: blob-report-*
+          merge-multiple: true
+          if-no-artifact-found: warn
+
+      - name: Download JSON test data from all shards
+        if: ${{ inputs.report_mode != 'per-shard' }}
+        uses: actions/download-artifact@v5
+        with:
+          path: all-shard-json
+          pattern: shard-test-index-*
+          if-no-artifact-found: warn
+
+      - name: Download individual Playwright reports
+        if: ${{ inputs.report_mode != 'merged' }}
+        uses: actions/download-artifact@v5
+        with:
+          path: all-shard-playwright-reports
+          pattern: playwright-report-shard-*
+          if-no-artifact-found: warn
+
+      - name: Download individual Allure reports
+        if: ${{ inputs.report_mode != 'merged' }}
+        uses: actions/download-artifact@v5
+        with:
+          path: all-shard-allure-reports
+          pattern: allure-report-shard-*
+          if-no-artifact-found: warn
+
+      - name: Generate merged Playwright HTML report
+        if: ${{ inputs.report_mode != 'per-shard' }}
+        shell: bash
+        run: |
+          if find all-blob-reports -type f -print -quit 2>/dev/null | grep -q .; then
+            npx playwright merge-reports --reporter html ./all-blob-reports
+          else
+            echo "No Blob reports were produced; cannot merge the Playwright report."
+          fi
+
+      - name: Generate merged report shard and case ID index
+        if: ${{ always() && !cancelled() && inputs.report_mode != 'per-shard' }}
+        env:
+          INCLUDE_SHARD_REPORT_LINKS: ${{ inputs.report_mode == 'both' && 'true' || 'false' }}
+        run: node scripts/shard-report-tools.cjs index all-shard-json playwright-report/shard-test-index.html "$INCLUDE_SHARD_REPORT_LINKS"
+
+      - name: Upload merged Playwright HTML report
+        if: ${{ always() && !cancelled() && inputs.report_mode != 'per-shard' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: merged-playwright-report-${{ github.run_number }}
+          path: playwright-report/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Download Allure results from all shards
+        if: ${{ inputs.report_mode != 'per-shard' }}
+        uses: actions/download-artifact@v5
+        with:
+          path: all-allure-results
+          pattern: allure-results-shard-*
+          merge-multiple: true
+          if-no-artifact-found: warn
+
+      - name: Generate merged Allure HTML report
+        if: ${{ inputs.report_mode != 'per-shard' }}
+        shell: bash
+        run: |
+          if find all-allure-results -type f -name '*-result.json' -print -quit 2>/dev/null | grep -q .; then
+            npx allure generate all-allure-results --clean --output merged-allure-report
+          else
+            echo "No Allure result files were produced; cannot generate merged Allure report."
+          fi
+
+      - name: Upload merged Allure HTML report
+        if: ${{ always() && !cancelled() && inputs.report_mode != 'per-shard' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: merged-allure-report-${{ github.run_number }}
+          path: merged-allure-report/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Assemble GitHub Pages report bundle
+        if: ${{ always() && !cancelled() }}
+        shell: bash
+        env:
+          REPORT_MODE: ${{ inputs.report_mode || 'both' }}
+        run: |
+          mkdir -p sharded-pages-report
+          mkdir -p sharded-pages-report/shards/playwright sharded-pages-report/shards/allure
+
+          if [ "$REPORT_MODE" != "per-shard" ]; then
+            if [ -d playwright-report ]; then cp -a playwright-report/. sharded-pages-report/; fi
+            mkdir -p sharded-pages-report/allure
+            if [ -d merged-allure-report ]; then cp -a merged-allure-report/. sharded-pages-report/allure/; fi
+          fi
+
+          for shard_dir in all-shard-playwright-reports/playwright-report-shard-*; do
+            [ -d "$shard_dir" ] || continue
+            shard_index="${shard_dir##*-}"
+            target="sharded-pages-report/shards/playwright/shard-${shard_index}"
+            mkdir -p "$target"
+            cp -a "$shard_dir"/. "$target"/
+          done
+
+          for shard_dir in all-shard-allure-reports/allure-report-shard-*; do
+            [ -d "$shard_dir" ] || continue
+            shard_index="${shard_dir##*-}"
+            target="sharded-pages-report/shards/allure/shard-${shard_index}"
+            mkdir -p "$target"
+            cp -a "$shard_dir"/. "$target"/
+          done
+
+          {
+            echo '<!doctype html>'
+            echo '<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Playwright shard reports</title></head>'
+            echo '<body><h1>Shard reports</h1>'
+            if [ -f sharded-pages-report/shard-test-index.html ]; then
+              echo '<p><a href="../shard-test-index.html">Merged test case ID and shard index</a></p>'
+            fi
+            echo '<ul>'
+            if [ "$REPORT_MODE" = "merged" ]; then
+              echo '<li>Individual shard reports were not generated for this run. Select per-shard or both to include them.</li>'
+            else
+              for shard_dir in sharded-pages-report/shards/playwright/shard-*; do
+                [ -d "$shard_dir" ] || continue
+                shard_index="${shard_dir##*-}"
+                printf '<li>Shard %s: <a href="playwright/shard-%s/index.html">Playwright</a> | <a href="playwright/shard-%s/shard-test-index.html">Case ID index</a> | <a href="allure/shard-%s/index.html">Allure</a></li>\n' "$shard_index" "$shard_index" "$shard_index" "$shard_index"
+              done
+            fi
+            echo '</ul></body></html>'
+          } > sharded-pages-report/shards/index.html
+
+          if [ "$REPORT_MODE" = "per-shard" ]; then
+            cat > sharded-pages-report/index.html <<'EOF'
+          <!doctype html>
+          <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Playwright shard reports</title></head>
+          <body><h1>Individual shard reports</h1><p>Choose a shard report:</p><p><a href="shards/index.html">Browse Playwright and Allure reports by shard</a></p></body></html>
+          EOF
+          fi
+
+      - name: Upload sharded GitHub Pages bundle
+        if: ${{ always() && !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: sharded-pages-report-${{ github.run_number }}
+          path: sharded-pages-report/
+          if-no-files-found: warn
+          retention-days: 30

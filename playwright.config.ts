@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { defineConfig, devices } from "@playwright/test";
+import { defineConfig, devices, type ReporterDescription } from "@playwright/test";
 import { getEnvironmentUrls } from "./config/environments";
 import process from "node:process";
 
@@ -15,6 +15,21 @@ import process from "node:process";
  * See https://playwright.dev/docs/test-configuration.
  */
 const environmentUrls = getEnvironmentUrls();
+const reporters: ReporterDescription[] = [
+  ["html", { outputFolder: "playwright-report", open: "never" }],
+  ["allure-playwright", { resultsDir: "allure-results" }],
+];
+
+if (process.env.PLAYWRIGHT_BLOB_REPORT === "true") {
+  reporters.push(["blob", { outputDir: "blob-report" }]);
+}
+
+if (process.env.PLAYWRIGHT_JSON_REPORT) {
+  reporters.push([
+    "json",
+    { outputFile: process.env.PLAYWRIGHT_JSON_REPORT },
+  ]);
+}
 
 export default defineConfig({
   testDir: "./tests",
@@ -27,10 +42,7 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: [
-    ["html"],
-    ["allure-playwright", { resultsDir: "allure-results" }],
-  ],
+  reporter: reporters,
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
