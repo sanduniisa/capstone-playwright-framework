@@ -5,6 +5,7 @@ on:
     workflows:
       - Playwright And Cucumber Tests
       - Playwright And Cucumber Tests (Docker)
+      - Playwright Tests (Sharded)
     types:
       - completed
 
@@ -19,7 +20,7 @@ concurrency:
 
 jobs:
   publish:
-    name: Publish completed run's Allure report
+    name: Publish completed run's report bundle
     if: ${{ github.event.workflow_run.conclusion != 'cancelled' }}
     runs-on: ubuntu-latest
     environment:
@@ -33,7 +34,10 @@ jobs:
           SOURCE_WORKFLOW: ${{ github.event.workflow_run.name }}
           SOURCE_RUN_NUMBER: ${{ github.event.workflow_run.run_number }}
         run: |
-          if [[ "$SOURCE_WORKFLOW" == *"(Docker)"* ]]; then
+          if [[ "$SOURCE_WORKFLOW" == *"(Sharded)"* ]]; then
+            echo "kind=sharded" >> "$GITHUB_OUTPUT"
+            echo "artifact=sharded-pages-report-${SOURCE_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          elif [[ "$SOURCE_WORKFLOW" == *"(Docker)"* ]]; then
             echo "kind=docker" >> "$GITHUB_OUTPUT"
             echo "artifact=allure-report-docker-${SOURCE_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
           else
@@ -41,7 +45,7 @@ jobs:
             echo "artifact=allure-report-${SOURCE_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Download source run's Allure report
+      - name: Download source run's report bundle
         id: download-report
         continue-on-error: true
         uses: actions/download-artifact@v5
@@ -60,7 +64,7 @@ jobs:
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "Source workflow did not leave an Allure HTML report artifact; nothing to publish."
+            echo "Source workflow did not leave a report bundle with index.html; nothing to publish."
           fi
 
       - name: Upload report for GitHub Pages
@@ -82,7 +86,18 @@ jobs:
           SOURCE_RUN_NUMBER: ${{ github.event.workflow_run.run_number }}
         run: |
           report_url="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/"
-          echo "Latest report published at: ${report_url}"
-          echo "## Allure report" >> "$GITHUB_STEP_SUMMARY"
+          echo "Playwright report published at: ${report_url}"
+          echo "## Published test reports" >> "$GITHUB_STEP_SUMMARY"
           echo "Source: ${SOURCE_KIND} run ${SOURCE_RUN_NUMBER}" >> "$GITHUB_STEP_SUMMARY"
-          echo "[Open the latest report](${report_url})" >> "$GITHUB_STEP_SUMMARY"
+          echo "[Open the latest Playwright report](${report_url})" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$SOURCE_KIND" = "sharded" ]; then
+            if [ -f published-report/allure/index.html ]; then
+              echo "[Open the merged Allure report](${report_url}allure/)" >> "$GITHUB_STEP_SUMMARY"
+            fi
+            if [ -f published-report/shard-test-index.html ]; then
+              echo "[Open the shard and test case ID index](${report_url}shard-test-index.html)" >> "$GITHUB_STEP_SUMMARY"
+            fi
+            if [ -f published-report/shards/index.html ]; then
+              echo "[Open individual shard reports](${report_url}shards/)" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
