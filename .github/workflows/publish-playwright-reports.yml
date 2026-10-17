@@ -1,12 +1,14 @@
 name: Publish Playwright Reports to GitHub Pages
 
 on:
-  workflow_run:
-    workflows:
-      - Playwright And Cucumber Tests
-      - Playwright And Cucumber Tests (Docker)
-    types:
-      - completed
+  # Automatic publishing is disabled. Re-enable by uncommenting the block below.
+  # workflow_run:
+  #   workflows:
+  #     - Playwright And Cucumber Tests
+  #     - Playwright And Cucumber Tests (Docker)
+  #   types:
+  #     - completed
+  workflow_dispatch:
 
 permissions:
   actions: read
@@ -20,7 +22,7 @@ concurrency:
 jobs:
   publish:
     name: Publish completed run's report bundle
-    if: ${{ github.event.workflow_run.conclusion != 'cancelled' }}
+    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'cancelled' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
