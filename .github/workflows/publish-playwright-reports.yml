@@ -1,12 +1,7 @@
 name: Publish Playwright Reports to GitHub Pages
 
 on:
-  workflow_run:
-    workflows:
-      - Playwright And Cucumber Tests
-      - Playwright And Cucumber Tests (Docker)
-    types:
-      - completed
+  workflow_dispatch:
 
 permissions:
   actions: read
