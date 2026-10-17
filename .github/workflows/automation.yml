@@ -96,8 +96,6 @@ on:
         required: false
         default: ''
         type: string
-  schedule:
-    - cron: '0 2 * * *'
 
 permissions:
   contents: read
